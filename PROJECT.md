@@ -317,7 +317,7 @@ create policy "own_folder_all" on storage.objects
 - PROJECT.md `patina/` içine taşındı, böylece repoda yedekli ve versiyonlu.
 
 **Sapmalar / açık kalanlar:**
-- Repo şu an **private**. Claude Code'un izin sistemi public repo oluşturmasına izin vermedi; Aliyev onayıyla private açıldı. GitHub → Settings → General → Change visibility ile public'e çevrilecek (portföy için gerekli).
+- Repo **public** (Aliyev çevirdi, 2026-11-06). İlk oluşturma private yapılmıştı; Claude Code'un izin sistemi public repo oluşturmaya izin vermiyor. Public'e geçince secret taraması yapıldı: repodaki 18 dosyanın hiçbirinde ve git geçmişinde anahtar/`.env` izi yok.
 - Vercel deploy'u Aliyev panelden yapacak: Claude Code'un izin sistemi production deploy'a izin vermiyor. Vercel hesabı mevcut (`aliyev2007pa-4219`, Hobby/ücretsiz).
 - `npm audit`: 8 moderate uyarı, hepsi create-next-app'in standart bağımlılıklarından. FAZ 7'de ele alınacak.
 
@@ -502,7 +502,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 
 | Faz | Durum | Tarih | Not |
 |---|---|---|---|
-| FAZ 0 — Kurulum & ilk deploy | 🔄 Deploy bekliyor | 2026-11-06 | Kurulum + repo + push tamam. Vercel import'u Aliyev yapacak, repo public'e çevrilecek. |
+| FAZ 0 — Kurulum & ilk deploy | 🔄 Deploy bekliyor | 2026-11-06 | Kurulum + public repo + push tamam, secret taraması temiz. Kalan tek adım: Vercel import (Aliyev yapacak). |
 | FAZ 1 — Tasarım sistemi | ◻ Bekliyor | | |
 | FAZ 2 — Yükleme & önizleme | ◻ Bekliyor | | |
 | FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
