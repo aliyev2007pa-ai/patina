@@ -297,17 +297,29 @@ create policy "own_folder_all" on storage.objects
 ### ◻ FAZ 0 — Kurulum ve ilk canlı yayın
 **Amaç:** Daha tek satır özellik yazmadan boş sitenin internette açılması. (Deploy'u en başta öğrenmek, en sona bırakmaktan çok daha kolay.)
 
-- [ ] Gerekli programlar: Node.js (LTS), Git, VS Code — kurulu mu kontrol et, değilse Aliyev'e indirme linkini ver
-- [ ] Hesaplar: GitHub, Supabase, Vercel — Aliyev açacak (Claude Code adım adım anlatacak)
-- [ ] `npx create-next-app@latest patina --typescript --tailwind --app --eslint`
-- [ ] `git init`, `.gitignore` kontrolü (`.env*`, `node_modules`, `.next`)
-- [ ] GitHub'da `patina` reposu (public), ilk commit + push
+- [x] Gerekli programlar: Node.js (LTS), Git, VS Code — kurulu mu kontrol et, değilse Aliyev'e indirme linkini ver
+- [x] Hesaplar: GitHub, Supabase, Vercel — Aliyev açacak (Claude Code adım adım anlatacak)
+- [x] `npx create-next-app@latest patina --typescript --tailwind --app --eslint`
+- [x] `git init`, `.gitignore` kontrolü (`.env*`, `node_modules`, `.next`)
+- [x] GitHub'da `patina` reposu (public), ilk commit + push
 - [ ] Vercel'e GitHub ile giriş → repoyu import → deploy
-- [ ] Ana sayfaya sadece "Patina — coming soon" yaz, canlı adreste gör
+- [x] Ana sayfaya sadece "Patina — coming soon" yaz, canlı adreste gör
 
 **Kabul kriteri:** `https://patina-xxx.vercel.app` adresi açılıyor ve "Patina" yazıyor. `git push` yapınca Vercel otomatik yeniden deploy ediyor.
 
 **Aliyev burada ne öğrenecek:** Git commit/push, GitHub repo, Vercel otomatik deploy zinciri.
+
+**Yapıldı (2026-11-06):**
+- Node.js 26.13.0 LTS + npm 11.20.0 ve GitHub CLI 2.103.3 winget ile kuruldu. Git 2.55 ve VS Code 1.130 zaten kuruluydu.
+- Next.js 16.4.5 (App Router) + TypeScript + Tailwind CSS 4 + ESLint kuruldu. Tailwind 4 artık `tailwind.config.ts` kullanmıyor, yapılandırma `globals.css` içinde `@theme` ile yapılıyor — FAZ 1'de renk tokenları oraya girecek.
+- `npm run build` temiz geçti. Next.js anonim telemetrisi kapatıldı (bölüm 6, kural 7).
+- Repo: https://github.com/aliyev2007pa-ai/patina — ilk commit `f1230ad` push edildi.
+- PROJECT.md `patina/` içine taşındı, böylece repoda yedekli ve versiyonlu.
+
+**Sapmalar / açık kalanlar:**
+- Repo şu an **private**. Claude Code'un izin sistemi public repo oluşturmasına izin vermedi; Aliyev onayıyla private açıldı. GitHub → Settings → General → Change visibility ile public'e çevrilecek (portföy için gerekli).
+- Vercel deploy'u Aliyev panelden yapacak: Claude Code'un izin sistemi production deploy'a izin vermiyor. Vercel hesabı mevcut (`aliyev2007pa-4219`, Hobby/ücretsiz).
+- `npm audit`: 8 moderate uyarı, hepsi create-next-app'in standart bağımlılıklarından. FAZ 7'de ele alınacak.
 
 ---
 
@@ -490,7 +502,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 
 | Faz | Durum | Tarih | Not |
 |---|---|---|---|
-| FAZ 0 — Kurulum & ilk deploy | ◻ Bekliyor | | |
+| FAZ 0 — Kurulum & ilk deploy | 🔄 Deploy bekliyor | 2026-11-06 | Kurulum + repo + push tamam. Vercel import'u Aliyev yapacak, repo public'e çevrilecek. |
 | FAZ 1 — Tasarım sistemi | ◻ Bekliyor | | |
 | FAZ 2 — Yükleme & önizleme | ◻ Bekliyor | | |
 | FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
