@@ -294,7 +294,7 @@ create policy "own_folder_all" on storage.objects
 
 ---
 
-### ◻ FAZ 0 — Kurulum ve ilk canlı yayın
+### ✅ FAZ 0 — Kurulum ve ilk canlı yayın
 **Amaç:** Daha tek satır özellik yazmadan boş sitenin internette açılması. (Deploy'u en başta öğrenmek, en sona bırakmaktan çok daha kolay.)
 
 - [x] Gerekli programlar: Node.js (LTS), Git, VS Code — kurulu mu kontrol et, değilse Aliyev'e indirme linkini ver
@@ -302,7 +302,7 @@ create policy "own_folder_all" on storage.objects
 - [x] `npx create-next-app@latest patina --typescript --tailwind --app --eslint`
 - [x] `git init`, `.gitignore` kontrolü (`.env*`, `node_modules`, `.next`)
 - [x] GitHub'da `patina` reposu (public), ilk commit + push
-- [ ] Vercel'e GitHub ile giriş → repoyu import → deploy
+- [x] Vercel'e GitHub ile giriş → repoyu import → deploy
 - [x] Ana sayfaya sadece "Patina — coming soon" yaz, canlı adreste gör
 
 **Kabul kriteri:** `https://patina-xxx.vercel.app` adresi açılıyor ve "Patina" yazıyor. `git push` yapınca Vercel otomatik yeniden deploy ediyor.
@@ -315,10 +315,14 @@ create policy "own_folder_all" on storage.objects
 - `npm run build` temiz geçti. Next.js anonim telemetrisi kapatıldı (bölüm 6, kural 7).
 - Repo: https://github.com/aliyev2007pa-ai/patina — ilk commit `f1230ad` push edildi.
 - PROJECT.md `patina/` içine taşındı, böylece repoda yedekli ve versiyonlu.
+- **Canlı adres: https://patina-steel-nine.vercel.app** — Vercel takımı `Filinta`, plan Hobby (ücretsiz). İlk deploy 25 saniye sürdü.
+- **Kabul kriteri doğrulandı (2026-11-09):** Ana sayfaya gizlilik satırı eklenip `d81ad25` push edildi; Vercel elle hiçbir şey yapılmadan yeniden yayınladı ve yeni satır canlı sitede göründü. push → otomatik deploy zinciri çalışıyor.
 
 **Sapmalar / açık kalanlar:**
 - Repo **public** (Aliyev çevirdi, 2026-11-06). İlk oluşturma private yapılmıştı; Claude Code'un izin sistemi public repo oluşturmaya izin vermiyor. Public'e geçince secret taraması yapıldı: repodaki 18 dosyanın hiçbirinde ve git geçmişinde anahtar/`.env` izi yok.
-- Vercel deploy'u Aliyev panelden yapacak: Claude Code'un izin sistemi production deploy'a izin vermiyor. Vercel hesabı mevcut (`aliyev2007pa-4219`, Hobby/ücretsiz).
+- Vercel GitHub bağlantısı Aliyev tarafından yapıldı (popup ve kimlik doğrulama adımları Claude Code'a kapalı). GitHub App `aliyev2007pa-ai` hesabına **yalnızca patina** reposu için kuruldu.
+- **Yerelde build sorunu:** Windows Application Control politikası `@next/swc-win32-x64-msvc` native dosyasını engelliyor. Next.js WASM'a düşüyor ve Turbopack WASM ile çalışmadığı için `npm run build` hata veriyor. Geçici çözüm: `npx next build --webpack` (çalışıyor, ~45 sn). Vercel'in Linux sunucularında bu sorun yok, orada Turbopack sorunsuz. **Karar bekliyor:** package.json script'leri webpack'e sabitlensin mi?
+- Vercel 2FA kurulumu ertelendi ("Remind Me in 1 Day"). İstenirse sonra kurulur.
 - `npm audit`: 8 moderate uyarı, hepsi create-next-app'in standart bağımlılıklarından. FAZ 7'de ele alınacak.
 
 ---
@@ -502,7 +506,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 
 | Faz | Durum | Tarih | Not |
 |---|---|---|---|
-| FAZ 0 — Kurulum & ilk deploy | 🔄 Deploy bekliyor | 2026-11-06 | Kurulum + public repo + push tamam, secret taraması temiz. Kalan tek adım: Vercel import (Aliyev yapacak). |
+| FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ◻ Bekliyor | | |
 | FAZ 2 — Yükleme & önizleme | ◻ Bekliyor | | |
 | FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
