@@ -6,6 +6,9 @@ export default function Home() {
       <p className="mt-6 max-w-md text-sm tracking-wide text-[#9A968E] sm:text-base">
         Turn your photos into old master oil paintings.
       </p>
+      <p className="mt-4 max-w-md text-sm text-[#9A968E]">
+        Your photo never leaves your device.
+      </p>
       <p className="mt-10 text-xs uppercase tracking-[0.3em] text-[#1FB3A6]">
         Coming soon
       </p>
