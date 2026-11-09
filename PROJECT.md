@@ -321,7 +321,11 @@ create policy "own_folder_all" on storage.objects
 **Sapmalar / açık kalanlar:**
 - Repo **public** (Aliyev çevirdi, 2026-11-06). İlk oluşturma private yapılmıştı; Claude Code'un izin sistemi public repo oluşturmaya izin vermiyor. Public'e geçince secret taraması yapıldı: repodaki 18 dosyanın hiçbirinde ve git geçmişinde anahtar/`.env` izi yok.
 - Vercel GitHub bağlantısı Aliyev tarafından yapıldı (popup ve kimlik doğrulama adımları Claude Code'a kapalı). GitHub App `aliyev2007pa-ai` hesabına **yalnızca patina** reposu için kuruldu.
-- **Yerelde build sorunu:** Windows Application Control politikası `@next/swc-win32-x64-msvc` native dosyasını engelliyor. Next.js WASM'a düşüyor ve Turbopack WASM ile çalışmadığı için `npm run build` hata veriyor. Geçici çözüm: `npx next build --webpack` (çalışıyor, ~45 sn). Vercel'in Linux sunucularında bu sorun yok, orada Turbopack sorunsuz. **Karar bekliyor:** package.json script'leri webpack'e sabitlensin mi?
+- **Yerelde build sorunu:** Windows Application Control politikası `@next/swc-win32-x64-msvc` native dosyasını engelliyor. Next.js WASM'a düşüyor ve Turbopack WASM ile çalışmadığı için `npm run build` hata veriyor. Vercel'in Linux sunucularında bu sorun yok.
+
+  **Çözüldü (Aliyev kararı, 2026-11-09):** `package.json` içindeki `dev` ve `build` script'lerine `--webpack` eklendi. Konsolda görünen `⚠ Attempted to load @next/swc-win32-x64-msvc` uyarıları zararsız — Next.js WASM'a düşüyor ve derleme tamamlanıyor.
+
+  **Bu değişikliğin bir yan etkisi oldu ve düzeltildi:** `create-next-app` projeye Tailwind eklentisi olarak `@tailwindcss/turbopack` koymuştu; bu eklenti yalnızca Turbopack'e bağlanıyor. Script'ler webpack'e alınınca Tailwind sessizce devre dışı kaldı — build hata vermedi ama üretilen CSS'te hiçbir utility sınıfı yoktu ve canlı site bir süre stilsiz yayınlandı. Önce commit geri alınıp site kurtarıldı, sonra `@tailwindcss/postcss` kurulup `postcss.config.mjs` eklendi. **Ders:** build'in "başarılı" demesi çıktının doğru olduğu anlamına gelmiyor; her deploy sonrası siteye gözle bakılacak.
 - Vercel 2FA kurulumu ertelendi ("Remind Me in 1 Day"). İstenirse sonra kurulur.
 - `npm audit`: 8 moderate uyarı, hepsi create-next-app'in standart bağımlılıklarından. FAZ 7'de ele alınacak.
 
