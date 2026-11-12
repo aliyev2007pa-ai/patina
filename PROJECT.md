@@ -359,19 +359,42 @@ create policy "own_folder_all" on storage.objects
 
 ---
 
-### ◻ FAZ 2 — Fotoğraf yükleme ve önizleme
+### ✅ FAZ 2 — Fotoğraf yükleme ve önizleme
 **Amaç:** Dosyayı alıp ekranda gösterebilmek. Filtre yok.
 
-- [ ] `/studio` sayfası
-- [ ] Sürükle-bırak + dosya seçme alanı (`DropZone.tsx`)
-- [ ] Doğrulama: tip, boyut (max 10 MB), magic bytes
-- [ ] EXIF orientation düzeltmesi
-- [ ] Canvas'a çizim, uzun kenar max 2048px küçültme
-- [ ] Hata durumları: yanlış tip, çok büyük, bozuk dosya → düzgün İngilizce mesaj
-- [ ] "Remove / choose another" butonu
-- [ ] Commit + push
+- [x] `/studio` sayfası
+- [x] Sürükle-bırak + dosya seçme alanı (`DropZone.tsx`)
+- [x] Doğrulama: tip, boyut (max 10 MB), magic bytes
+- [x] EXIF orientation düzeltmesi
+- [x] Canvas'a çizim, uzun kenar max 2048px küçültme
+- [x] Hata durumları: yanlış tip, çok büyük, bozuk dosya → düzgün İngilizce mesaj
+- [x] "Remove / choose another" butonu
+- [x] Commit + push
 
 **Kabul kriteri:** Telefondan yan çekilmiş bir fotoğraf bile doğru yönde ekranda görünüyor.
+
+**Yapıldı (2026-11-12):**
+- `lib/image/validate.ts` — tip, boyut ve **magic bytes** kontrolü. Dosyanın adı değil ilk baytları okunuyor; `.txt` dosyasını `.jpg` diye yeniden adlandırmak işe yaramıyor (PROJECT.md 6.4).
+- `lib/image/exif.ts` — JPEG'in APP1 bölümünü gezip 0x0112 numaralı yön etiketini okuyan küçük bir ayrıştırıcı. Okuyamadığı her durumda 1 (dik) dönüyor; yanlış yön bir kullanıcıyı rahatsız eder, çökme herkesi.
+- `lib/image/decode.ts` — yönü düzeltip uzun kenarı 2048px'e indiriyor. Canvas'tan geçirmek EXIF'i tamamen siliyor, yani konum/cihaz bilgisi kaydedilen tabloya sızamıyor (PROJECT.md 6.5 kendiliğinden sağlanmış oluyor).
+- `components/DropZone.tsx` — sürükle-bırak + dosya seçme. Görünür alan gizli bir `input`'u saran `<label>`, böylece klavye ve ekran okuyucu desteği bedava geliyor.
+- `components/Studio.tsx` — önizleme, künye (dosya adı, boyut, çalışma boyutu, dönüş bilgisi) ve "Choose another".
+
+**Bir hata bulundu ve düzeltildi:** İlk sürümde `createImageBitmap`'ten `imageOrientation: "none"` istenip dönüş elle uygulanıyordu. Tarayıcı bu isteği yok sayıp EXIF'i kendisi uyguladı, üstüne bir de bizimki eklenince fotoğraf 90° yerine **180°** döndü. Çözüm: kod artık çalışma anında, EXIF etiketi taşıyan 2×1'lik bir JPEG çözerek tarayıcıya "sen mi döndürüyorsun" diye soruyor ve cevabına göre davranıyor. Sayfa başına bir kez hesaplanıyor.
+
+**Tarayıcıda doğrulandı:**
+| Test | Sonuç |
+|---|---|
+| EXIF 6 (yan çekilmiş), 400×200 | 200×400, 90° saat yönü — **doğru** |
+| 4000×3000 JPEG | 2048×1536'ya küçültüldü |
+| 600×800 PNG | değişmeden geçti |
+| `.txt` dosyası | "not a photo Patina can read" |
+| boş dosya | "That file is empty." |
+| 11 MB dosya | "limit is 10.0 MB" |
+| `.jpg` adlı metin dosyası | "looks damaged" — magic bytes yakaladı |
+| 320px genişlik | yatay taşma yok |
+
+**Yan düzeltme:** `eslint.config.mjs` içindeki `globalIgnores` listesi ESLint'in varsayılanlarını eziyordu ve `node_modules` listede yoktu; `npm run lint` bütün bağımlılıkları tarayıp 139.882 sorun bildiriyordu. Liste düzeltildi, `lint` komutu da kendi kaynak klasörlerimizi hedefleyecek şekilde ayarlandı.
 
 ---
 
@@ -524,7 +547,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 |---|---|---|---|
 | FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
-| FAZ 2 — Yükleme & önizleme | ◻ Bekliyor | | |
+| FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
 | FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
 | FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
 | FAZ 5 — Kaydetme & galeri | ◻ Bekliyor | | |
