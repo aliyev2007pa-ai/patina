@@ -331,19 +331,31 @@ create policy "own_folder_all" on storage.objects
 
 ---
 
-### ◻ FAZ 1 — Tasarım sistemi ve iskelet
+### ✅ FAZ 1 — Tasarım sistemi ve iskelet
 **Amaç:** Siteyi "güzel" yapan temeli kurmak. Henüz hiç işlevsellik yok, sadece görünüm.
 
-- [ ] `globals.css` içine 1.4'teki renk tokenları
-- [ ] Tailwind config'e renkleri ve fontları bağla
-- [ ] Cormorant Garamond + Inter'ı `next/font` ile yükle
-- [ ] `components/Header.tsx`, `Footer.tsx`, `GoldFrame.tsx`, `Plaque.tsx`, `Button.tsx`
-- [ ] `/` landing sayfası: başlık, alt başlık, "Start painting" butonu, gizlilik satırı, statik örnek görsel (şimdilik placeholder)
-- [ ] `/about` sayfası
-- [ ] Mobil uyum (320px'e kadar bozulmayacak)
-- [ ] Commit + push, canlıda kontrol
+- [x] `globals.css` içine 1.4'teki renk tokenları
+- [x] Tailwind config'e renkleri ve fontları bağla
+- [x] Cormorant Garamond + Inter'ı `next/font` ile yükle
+- [x] `components/Header.tsx`, `Footer.tsx`, `GoldFrame.tsx`, `Plaque.tsx`, `Button.tsx`
+- [x] `/` landing sayfası: başlık, alt başlık, "Start painting" butonu, gizlilik satırı, statik örnek görsel (şimdilik placeholder)
+- [x] `/about` sayfası
+- [x] Mobil uyum (320px'e kadar bozulmayacak)
+- [x] Commit + push, canlıda kontrol
 
 **Kabul kriteri:** Site müze gibi görünüyor, 4 renk paletine uyuyor, telefonda da düzgün.
+
+**Yapıldı (2026-11-12):**
+- Renk tokenları `globals.css` içinde CSS değişkeni olarak duruyor (PROJECT.md 1.4 ile birebir), `@theme inline` ile Tailwind'e bağlandı. Artık `bg-ink`, `text-gold`, `border-gold-d` gibi sınıflar var. Tailwind 4'te `tailwind.config.ts` yok, yapılandırma CSS'in içinde.
+- Fontlar `next/font` ile yükleniyor: başlık/logo/künye için **Cormorant Garamond**, arayüz metni için **Inter**. Build sırasında indirilip kendi sunucumuzdan servis ediliyor — Google'a istek gitmiyor, bu da "no tracking" sözünü destekliyor.
+- Bileşenler: `Header`, `Footer`, `Button`, `GoldFrame`, `Plaque`, `ComingSoon`, `SampleArtwork`.
+- `GoldFrame` iç içe kenarlıklardan yapıldı, görsel dosya kullanmıyor — her zoom seviyesinde keskin kalıyor.
+- `SampleArtwork` prosedürel bir SVG: solda fotoğraf, sağda tablo. Kanvas dokusu `feTurbulence` ile üretiliyor; gerçek motorun yapacağı şeyin küçük bir provası. FAZ 3'te gerçek bir önce/sonra çifti ile değiştirilecek.
+- `/` ve `/about` sayfaları gerçek içerikle yazıldı.
+- Mobil: 320px'de tarayıcıda ölçüldü, hiçbir rotada yatay taşma yok (`scrollWidth === innerWidth`). Başlıklar mobilde küçülüyor ve `text-balance` ile düzgün bölünüyor.
+- Klavye odağı görünürlüğü ve `prefers-reduced-motion` desteği şimdiden eklendi (FAZ 6'nın işi ama ucuzdu).
+
+**Kapsam dışına taşan tek şey:** Header'daki Studio/Gallery/Sign in linkleri henüz yapılmamış sayfalara gidiyordu. 404 vermemeleri için `/studio`, `/gallery`, `/login` adreslerine dürüst birer "yapım aşamasında" sayfası konuldu (`ComingSoon` bileşeni). FAZ 2 ve FAZ 4 bunları gerçek sayfalarla değiştirecek.
 
 ---
 
@@ -511,7 +523,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | Faz | Durum | Tarih | Not |
 |---|---|---|---|
 | FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
-| FAZ 1 — Tasarım sistemi | ◻ Bekliyor | | |
+| FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ◻ Bekliyor | | |
 | FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
 | FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
