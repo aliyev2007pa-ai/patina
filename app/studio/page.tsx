@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import ComingSoon from "@/components/ComingSoon";
+import Studio from "@/components/Studio";
 
 export const metadata: Metadata = {
   title: "Studio — Patina",
-  description: "Upload a photograph and repaint it, entirely in your browser.",
+  description:
+    "Choose a photograph and repaint it as an old master oil painting, entirely in your browser.",
 };
 
 export default function StudioPage() {
-  return (
-    <ComingSoon
-      phase="Being built"
-      title="The studio"
-      body="This is where you will drop a photograph, pick a style and watch it turn into a painting without anything leaving your device. The oil paint engine is the next thing being built."
-    />
-  );
+  return <Studio />;
 }
