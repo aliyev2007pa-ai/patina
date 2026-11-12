@@ -1,11 +1,58 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Patina design tokens — PROJECT.md 1.4
+   The palette is four colours: turquoise, white, dark gold, black.
+   Greys and transparencies are allowed; nothing else is.
+   --------------------------------------------------------------------------- */
 :root {
-  --ink: #0b0b0c;
-  --white: #ffffff;
+  --ink: #0b0b0c; /* page background — the museum wall */
+  --surface: #16161a; /* cards and panels */
+  --surface-2: #1f1f25; /* raised panels, inputs */
+  --turquoise: #1fb3a6; /* action: buttons, links, active state */
+  --turquoise-d: #0e8c83; /* turquoise hover / pressed */
+  --gold: #c9a227; /* value: frames, rules, accents */
+  --gold-d: #8c6a1a; /* gold shadow / edge */
+  --paper: #f7f3ea; /* warm off-white — canvas surfaces */
+  --white: #ffffff; /* pure white — body text and icons only */
+  --muted: #9a968e; /* secondary text */
+}
+
+/* Expose the tokens to Tailwind so utilities like `bg-ink` and `text-gold`
+   exist. `inline` is what lets a theme value reference another variable. */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-turquoise: var(--turquoise);
+  --color-turquoise-d: var(--turquoise-d);
+  --color-gold: var(--gold);
+  --color-gold-d: var(--gold-d);
+  --color-paper: var(--paper);
+  --color-white: var(--white);
+  --color-muted: var(--muted);
+
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--ink);
   color: var(--white);
+}
+
+/* Calm by default — PROJECT.md 1.5 asks for 200–300ms, nothing flashy. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Keyboard focus must always be visible (FAZ 6 accessibility, cheap to do now). */
+:focus-visible {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
 }
