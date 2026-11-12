@@ -5,9 +5,12 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+  // This list replaces ESLint's defaults rather than adding to them, so
+  // node_modules has to be named explicitly — without it, `eslint .` walks
+  // every dependency and reports six figures' worth of problems that are
+  // none of our business.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    "node_modules/**",
     ".next/**",
     "out/**",
     "build/**",
