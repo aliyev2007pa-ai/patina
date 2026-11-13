@@ -3,6 +3,7 @@ import Button from "@/components/Button";
 
 export const metadata: Metadata = {
   title: "About",
+  alternates: { canonical: "/about" },
   description:
     "How Patina repaints a photograph in your browser, why it is free, and why your photo never leaves your device.",
 };

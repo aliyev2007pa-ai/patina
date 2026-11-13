@@ -3,6 +3,7 @@ import Studio from "@/components/Studio";
 
 export const metadata: Metadata = {
   title: "Studio",
+  alternates: { canonical: "/studio" },
   description:
     "Choose a photograph and repaint it as an old master oil painting, entirely in your browser.",
 };

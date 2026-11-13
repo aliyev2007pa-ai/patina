@@ -101,7 +101,9 @@ export default function DropZone({
         <p className="mt-6 text-xs text-muted">
           JPEG, PNG or WebP · up to 10 MB
         </p>
-        <p className="mt-1 text-xs text-gold/70">
+        {/* Full gold, not gold/70: at 12px the faded version measured 4.38:1
+            against this panel, just under the 4.5:1 that small text needs. */}
+        <p className="mt-1 text-xs text-gold">
           It stays on your device — nothing is uploaded.
         </p>
       </label>
