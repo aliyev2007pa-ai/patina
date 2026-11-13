@@ -4,6 +4,7 @@ import AuthForm from "@/components/AuthForm";
 
 export const metadata: Metadata = {
   title: "Sign in",
+  alternates: { canonical: "/login" },
   description:
     "Sign in to keep your paintings. Everything else works without an account.",
 };

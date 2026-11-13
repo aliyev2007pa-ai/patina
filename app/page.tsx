@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Button from "@/components/Button";
 import GoldFrame from "@/components/GoldFrame";
 import Plaque from "@/components/Plaque";
 import SampleArtwork from "@/components/SampleArtwork";
+
+// Title and description come from the root layout; only the canonical is
+// this page's own, since every page now states its own address.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 /**
  * Landing page — a dark gallery wall with one painting hanging on it.

@@ -49,7 +49,10 @@ export const metadata: Metadata = {
     "no upload",
     "free",
   ],
-  alternates: { canonical: "/" },
+  // No canonical here on purpose. A canonical in the root layout is
+  // inherited by every page, so each one would announce itself as a copy of
+  // the home page — which is exactly what a canonical link is for telling
+  // a search engine. Each page sets its own.
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
