@@ -10,6 +10,7 @@ import {
 import { DENOISE_SHADER } from "./shaders/denoise";
 import { TENSOR_SHADER, TENSOR_BLUR_SHADER } from "./shaders/tensor";
 import { KUWAHARA_SHADER } from "./shaders/kuwahara";
+import { STROKE_SHADER } from "./shaders/stroke";
 import { IMPASTO_SHADER } from "./shaders/impasto";
 import { TONE_SHADER } from "./shaders/tone";
 import {
@@ -41,6 +42,8 @@ export type PaintSettings = {
   eccentricity: number;
   /** Noise cleanup before anything else. */
   denoise: number;
+  /** How ragged the stroke edges are. 0 is machine-smooth. */
+  strokeJitter: number;
   /** Relief of the paint surface. */
   impasto: number;
   /** Aged varnish: cream lights, umber shadows, lifted blacks. */
@@ -60,24 +63,32 @@ export type PaintSettings = {
 /**
  * Chosen by looking at the output, not by theory.
  *
+ * The guiding rule for the defaults: **the subject keeps its own colours.**
+ * A photograph of a red coat should come out as a painting of a red coat,
+ * not as a sepia photograph of one. So the ageing controls start low and the
+ * work of looking painted is done by the brush, the relief and the canvas —
+ * which is what actually distinguishes a painting from a photograph anyway.
+ * The warm old-master palette is a choice, available on the Warmth slider
+ * and in the presets, not something imposed on every picture.
+ *
  * Sharpness below about 12 lets sectors of similar calmness average together
  * and the picture goes soft; eccentricity below about 2 leaves the strokes
- * too round to follow a contour convincingly. Heavy denoising costs more than
- * it removes, so it is kept light. Cracks start off, because on a modern face
- * they read as damage rather than age.
+ * too round to follow a contour convincingly. Cracks start off, because on
+ * anything modern they read as damage rather than age.
  */
 export const DEFAULT_SETTINGS: PaintSettings = {
   intensity: 1,
-  brushSize: 8,
+  brushSize: 10,
   sharpness: 14,
-  eccentricity: 2,
+  eccentricity: 2.5,
   denoise: 0.3,
-  impasto: 0.6,
-  warmth: 0.7,
-  contrast: 0.45,
-  saturation: 0.85,
-  canvasTexture: 0.55,
-  vignette: 0.5,
+  strokeJitter: 0.5,
+  impasto: 0.8,
+  warmth: 0.2,
+  contrast: 0.25,
+  saturation: 1,
+  canvasTexture: 0.5,
+  vignette: 0.3,
   cracks: 0,
 };
 
@@ -112,6 +123,7 @@ export class OilPaintEngine {
       tensor: createProgram(this.gl, TENSOR_SHADER),
       tensorBlur: createProgram(this.gl, TENSOR_BLUR_SHADER),
       kuwahara: createProgram(this.gl, KUWAHARA_SHADER),
+      stroke: createProgram(this.gl, STROKE_SHADER),
       impasto: createProgram(this.gl, IMPASTO_SHADER),
       tone: createProgram(this.gl, TONE_SHADER),
       canvasWeave: createProgram(this.gl, CANVAS_SHADER),
@@ -180,29 +192,39 @@ export class OilPaintEngine {
       uEccentricity: Math.max(0, settings.eccentricity),
     }, a);
 
-    // 6 — thick paint catching the light.
-    runPass(gl, programs.impasto, {
+    // 6 — fray the stroke edges, so they look dragged rather than cut.
+    runPass(gl, programs.stroke, {
       uImage: a.texture,
+      uTensor: c.texture,
       uTexel: texel,
-      uStrength: settings.impasto,
+      uAspect: aspect,
+      uStrength: settings.strokeJitter,
+      uScale: 90,
     }, b);
 
-    // 7 — the colour of age.
-    runPass(gl, programs.tone, {
+    // 7 — thick paint catching the light.
+    runPass(gl, programs.impasto, {
       uImage: b.texture,
+      uTexel: texel,
+      uStrength: settings.impasto,
+    }, a);
+
+    // 8 — the colour of age.
+    runPass(gl, programs.tone, {
+      uImage: a.texture,
       uWarmth: settings.warmth,
       uContrast: settings.contrast,
       uSaturation: settings.saturation,
     }, c);
 
-    // 8 — the woven linen underneath.
+    // 9 — the woven linen underneath.
     runPass(gl, programs.canvasWeave, {
       uImage: c.texture,
       uAspect: aspect,
       uStrength: settings.canvasTexture,
     }, d);
 
-    // 9 — cracks, when asked for. Skipped entirely at zero rather than run
+    // 10 — cracks, when asked for. Skipped entirely at zero rather than run
     // with no effect, which saves a full pass on every re-render.
     let surface = d;
     if (settings.cracks > 0) {
@@ -214,14 +236,14 @@ export class OilPaintEngine {
       surface = b;
     }
 
-    // 10 — varnish and vignette.
+    // 11 — varnish and vignette.
     runPass(gl, programs.varnish, {
       uImage: surface.texture,
       uAspect: aspect,
       uStrength: settings.vignette,
     }, a);
 
-    // 11 — blend with the photograph, back to sRGB, onto the canvas.
+    // 12 — blend with the photograph, back to sRGB, onto the canvas.
     runPass(gl, programs.output, {
       uImage: a.texture,
       uOriginal: photo.texture,
