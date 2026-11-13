@@ -10,6 +10,7 @@ import {
 import { DENOISE_SHADER } from "./shaders/denoise";
 import { TENSOR_SHADER, TENSOR_BLUR_SHADER } from "./shaders/tensor";
 import { KUWAHARA_SHADER } from "./shaders/kuwahara";
+import { COMBINE_SHADER } from "./shaders/combine";
 import { STROKE_SHADER } from "./shaders/stroke";
 import { IMPASTO_SHADER } from "./shaders/impasto";
 import { TONE_SHADER } from "./shaders/tone";
@@ -40,6 +41,10 @@ export type PaintSettings = {
   sharpness: number;
   /** How far strokes stretch along contours. 0 would be a plain circle. */
   eccentricity: number;
+  /** How much the brush shrinks where there is detail and grows where there is not. */
+  detailAdapt: number;
+  /** How much of a second, finer pass is laid over the broad one. */
+  secondPass: number;
   /** Noise cleanup before anything else. */
   denoise: number;
   /** How ragged the stroke edges are. 0 is machine-smooth. */
@@ -81,6 +86,8 @@ export const DEFAULT_SETTINGS: PaintSettings = {
   brushSize: 10,
   sharpness: 14,
   eccentricity: 2.5,
+  detailAdapt: 0.8,
+  secondPass: 0.75,
   denoise: 0.3,
   strokeJitter: 0.5,
   impasto: 0.8,
@@ -123,6 +130,7 @@ export class OilPaintEngine {
       tensor: createProgram(this.gl, TENSOR_SHADER),
       tensorBlur: createProgram(this.gl, TENSOR_BLUR_SHADER),
       kuwahara: createProgram(this.gl, KUWAHARA_SHADER),
+      combine: createProgram(this.gl, COMBINE_SHADER),
       stroke: createProgram(this.gl, STROKE_SHADER),
       impasto: createProgram(this.gl, IMPASTO_SHADER),
       tone: createProgram(this.gl, TONE_SHADER),
@@ -182,19 +190,46 @@ export class OilPaintEngine {
       uDirection: [0, 1] as [number, number],
     }, c);
 
-    // 5 — the brush strokes.
-    runPass(gl, programs.kuwahara, {
-      uImage: photo.texture,
+    // 5 — block the picture in with the broad brush.
+    const brush = {
       uTensor: c.texture,
       uTexel: texel,
-      uRadius: Math.max(1, settings.brushSize),
       uSharpness: Math.max(0.1, settings.sharpness),
       uEccentricity: Math.max(0, settings.eccentricity),
+      uDetailAdapt: settings.detailAdapt,
+    };
+
+    runPass(gl, programs.kuwahara, {
+      uImage: photo.texture,
+      ...brush,
+      uRadius: Math.max(1, settings.brushSize),
     }, a);
 
-    // 6 — fray the stroke edges, so they look dragged rather than cut.
+    let blocked = a;
+
+    // 6 — go back in with a smaller brush, but only where the broad one lost
+    // the form. A second full pass is the single most expensive thing the
+    // engine does, so it is skipped outright when the control is at zero.
+    if (settings.secondPass > 0) {
+      runPass(gl, programs.kuwahara, {
+        uImage: photo.texture,
+        ...brush,
+        uRadius: Math.max(2, settings.brushSize * 0.34),
+      }, b);
+
+      runPass(gl, programs.combine, {
+        uCoarse: a.texture,
+        uFine: b.texture,
+        uPhoto: photo.texture,
+        uAmount: settings.secondPass,
+      }, d);
+
+      blocked = d;
+    }
+
+    // 7 — fray the stroke edges, so they look dragged rather than cut.
     runPass(gl, programs.stroke, {
-      uImage: a.texture,
+      uImage: blocked.texture,
       uTensor: c.texture,
       uTexel: texel,
       uAspect: aspect,
@@ -202,14 +237,14 @@ export class OilPaintEngine {
       uScale: 90,
     }, b);
 
-    // 7 — thick paint catching the light.
+    // 8 — thick paint catching the light.
     runPass(gl, programs.impasto, {
       uImage: b.texture,
       uTexel: texel,
       uStrength: settings.impasto,
     }, a);
 
-    // 8 — the colour of age.
+    // 9 — the colour of age.
     runPass(gl, programs.tone, {
       uImage: a.texture,
       uWarmth: settings.warmth,
@@ -217,14 +252,14 @@ export class OilPaintEngine {
       uSaturation: settings.saturation,
     }, c);
 
-    // 9 — the woven linen underneath.
+    // 10 — the woven linen underneath.
     runPass(gl, programs.canvasWeave, {
       uImage: c.texture,
       uAspect: aspect,
       uStrength: settings.canvasTexture,
     }, d);
 
-    // 10 — cracks, when asked for. Skipped entirely at zero rather than run
+    // 11 — cracks, when asked for. Skipped entirely at zero rather than run
     // with no effect, which saves a full pass on every re-render.
     let surface = d;
     if (settings.cracks > 0) {
@@ -236,14 +271,14 @@ export class OilPaintEngine {
       surface = b;
     }
 
-    // 11 — varnish and vignette.
+    // 12 — varnish and vignette.
     runPass(gl, programs.varnish, {
       uImage: surface.texture,
       uAspect: aspect,
       uStrength: settings.vignette,
     }, a);
 
-    // 12 — blend with the photograph, back to sRGB, onto the canvas.
+    // 13 — blend with the photograph, back to sRGB, onto the canvas.
     runPass(gl, programs.output, {
       uImage: a.texture,
       uOriginal: photo.texture,

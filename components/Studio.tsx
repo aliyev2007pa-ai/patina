@@ -317,6 +317,24 @@ export default function Studio() {
                 onChange={(eccentricity) => update({ eccentricity })}
               />
               <Slider
+                label="Loose where it is empty"
+                value={settings.detailAdapt}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(detailAdapt) => update({ detailAdapt })}
+              />
+              <Slider
+                label="Second, finer pass"
+                value={settings.secondPass}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(secondPass) => update({ secondPass })}
+              />
+              <Slider
                 label="Stroke irregularity"
                 value={settings.strokeJitter}
                 min={0}

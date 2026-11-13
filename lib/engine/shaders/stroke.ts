@@ -91,9 +91,21 @@ void main() {
   vec2 q = vec2(dot(p, along) * 0.30, dot(p, across) * 2.4);
   float tonal = (noise(q) - 0.5) + (noise(q * 2.6 + 13.7) - 0.5) * 0.4;
 
+  // Bristles. A brush is not a blade: it is a few hundred hairs, and each one
+  // leaves its own thin furrow down the length of the stroke. Squashing the
+  // noise frame hard across the flow and barely at all along it turns the
+  // blobs into exactly those furrows.
+  //
+  // This is written into the colour rather than drawn as lines, because the
+  // impasto pass downstream reads brightness as height — so a furrow written
+  // here comes back as real relief, lit from the upper left, a moment later.
+  vec2 bristleFrame = vec2(dot(p, along) * 0.14, dot(p, across) * 11.0);
+  float bristles = (noise(bristleFrame) - 0.5) * 0.55;
+
   // Paint thins and thickens; it also drifts very slightly warm or cool as
   // the brush picks up its neighbour.
-  colour *= 1.0 + tonal * 0.17 * uStrength;
+  float load = tonal + bristles;
+  colour *= 1.0 + load * 0.17 * uStrength;
   colour += vec3(0.012, 0.004, -0.010) * tonal * uStrength;
 
   fragColor = vec4(max(colour, vec3(0.0)), 1.0);
