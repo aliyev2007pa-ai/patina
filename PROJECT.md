@@ -588,17 +588,87 @@ Kod tarafı bitti (commit `44eb413`). Supabase projesi **açılmadı** — gerek
 
 ---
 
-### ◻ FAZ 7 — Güvenlik ve kota denetimi
-- [ ] Bölüm 6'daki 9 maddeyi tek tek kontrol et ve raporla
-- [ ] `next.config.ts` güvenlik başlıklarını ekle ve tarayıcıda doğrula
-- [ ] İkinci bir hesap açıp başkasının verisine erişmeyi dene — **erişilememeli**
-- [ ] Doğrudan Supabase REST endpoint'ine token'sız istek at — reddedilmeli
-- [ ] EXIF'in gerçekten silindiğini doğrula
-- [ ] `npm audit` — kritik açık varsa düzelt
-- [ ] Repoda secret taraması (`git log -p | grep -i key`)
-- [ ] Commit + push
+### ✅ FAZ 7 — Güvenlik ve kota denetimi
+- [x] Bölüm 6'daki 9 maddeyi tek tek kontrol et ve raporla — **rapor aşağıda**
+- [x] `next.config.ts` güvenlik başlıklarını ekle ve tarayıcıda doğrula
+- [x] ~~İkinci hesapla başkasının verisine eriş~~ — **konusuz:** hesap yok, veri sunucuda değil. Yerine geçen kontrol 2. maddede.
+- [x] ~~Supabase REST'e token'sız istek~~ — **konusuz:** Supabase bağlı değil (2.3)
+- [x] EXIF'in gerçekten silindiğini doğrula — **kanıtlandı, aşağıda**
+- [x] `npm audit` — **7 moderate → 0**
+- [x] Repoda secret taraması
+- [x] Commit + push
 
-**Kabul kriteri:** Yazılı bir güvenlik kontrol raporu, 9 maddenin tamamı ✅.
+---
+
+## 7.1 GÜVENLİK DENETİM RAPORU (2026-11-13)
+
+Her madde **nasıl doğrulandığıyla** birlikte. "Baktım, iyi görünüyor" bir doğrulama değil; aşağıdakilerin çoğu tarayıcıda çalıştırılmış bir testtir.
+
+| # | Kural | Durum | Nasıl doğrulandı |
+|---|---|---|---|
+| 1 | Service role key istemciye/repoya girmeyecek | ✅ | Geçmiş tarandı: JWT (`eyJ...`), `service_role`, `-----BEGIN PRIVATE KEY`, `ghp_`, `sk-`, `xox*` desenleri `git log -p --all` üzerinde arandı. Tek eşleşme PROJECT.md'nin kuralın kendisini yazdığı satır. Anahtar **hiç üretilmedi** — bu kuralı ihlal etmek için önce Supabase projesi açmak gerekirdi. |
+| 2 | Sadece anon key, ve ancak RLS varsa | ✅ *(konusuz)* | Supabase bağlı değil. Yerine geçen soru: *bir ziyaretçinin galerisini başkası okuyabilir mi?* IndexedDB **origin'e bağlıdır** — tarayıcının same-origin policy'si. `localhost:3000`'de kaydedilen tablo `localhost:3100`'de görünmüyor; aynı makinede, sadece port farkıyla. Sunucuda hiç veri olmadığı için sızdırılacak satır da yok. |
+| 3 | `.env.local` gitignore'da | ✅ | `.gitignore:34` → `.env*`. Takipli dosyalar arasında `.env`/`secret`/`.pem`/`.key` eşleşmesi yok. |
+| 4 | Sadece JPEG/PNG/WebP, max 10 MB, magic bytes | ✅ | `lib/image/validate.ts`: boyut → MIME → **dosya imzası** sırasıyla. `virus.exe` → `cat.jpg` yeniden adlandırması imzada yakalanır; tarayıcının bildirdiği `file.type` işletim sisteminin uzantıdan tahminidir, tek başına güvenilmez. |
+| 5 | **EXIF temizliği** | ✅ **kanıtlandı** | Aşağıdaki teste bak. |
+| 6 | Güvenlik başlıkları | ✅ | Eklendi ve **production build'de** doğrulandı — aşağıdaki tabloya bak. |
+| 7 | Hiç analytics/tracking/reklam yok | ✅ **kanıtlandı** | Canlı sitede `performance.getEntriesByType('resource')` ile her istek listelendi: **üçüncü parti origin sayısı 0**. Google Fonts bile yok — `next/font` iki fontu build sırasında indirip kendi origin'imizden sunuyor, yani hiçbir ziyaretçinin tarayıcısı Google ile konuşmuyor. |
+| 8 | Şifre min 8, e-posta doğrulama | ✅ *(uykuda)* | `AuthForm.tsx`: `MIN_PASSWORD = 8`, hem JS kontrolü hem `minLength`. Hesaplar kapalı olduğu için şu an çalışmıyor. |
+| 9 | Hata mesajları teknik detay sızdırmayacak | ✅ | `error.tsx` hatayı **yazdırmıyor**, sadece `digest` gösteriyor — hatayı tarif etmeden tanımlayan tek parça. `AuthForm` Supabase'in kendi metnini yeniden yazıyor. Galeri ve studio hataları kullanıcı diliyle. |
+
+### EXIF testi — nasıl kanıtlandı
+
+"Canvas'a yeniden çizmek EXIF'i siler" cümlesine güvenmek yerine ölçtüm:
+
+1. Canvas'tan düz bir JPEG üretildi.
+2. SOI'dan hemen sonra **gerçek bir APP1/EXIF bloğu** eklendi: TIFF başlığı, IFD0, `Make` (0x010F) etiketinde `PATINA-EXIF-CANARY-9Q7` ve `Orientation` (0x0112).
+3. Girdide doğrulandı: `Exif` işareti 6. baytta, kanarya 50. baytta.
+4. Dosya studio'ya verildi, boyandı, galeriye kaydedildi.
+5. **Saklanan bayt'lar IndexedDB'den geri okundu.**
+
+| Çıktı | `Exif` işareti | Kanarya metni | SOI'dan sonraki ilk marker |
+|---|---|---|---|
+| Tam boy (kayıtlı) | ❌ yok | ❌ yok | `0xFFE0` (JFIF) |
+| Thumbnail | ❌ yok | ❌ yok | — |
+| İndirme JPEG | ❌ yok | ❌ yok | — |
+| İndirme PNG | ❌ yok | ❌ yok | — |
+
+APP1 bloğu tamamen kayboldu; yerinde tarayıcının kendi kodlayıcısının yazdığı JFIF başlığı var. **Konum, cihaz ve çekim bilgisi çıktıya geçmiyor.**
+
+### Güvenlik başlıkları (production build'de ölçüldü)
+
+| Başlık | Değer |
+|---|---|
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests` |
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `no-referrer` |
+| `Permissions-Policy` | kamera, mikrofon, konum, ödeme, usb, midi, sensörler — hepsi `()` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` (preload **yok** — sahip olmadığımız bir alan adında tek yönlü kapı) |
+
+**CSP'de dürüst bir ödünleşme var ve gizlemiyorum:** `script-src` içinde `'unsafe-inline'` duruyor. Next'in App Router'ı sayfayı satır içi `<script>` etiketleriyle akıtıyor; sıkı bir politika için nonce gerekir, nonce ise **istek başına** üretilmek zorunda — yani sitedeki her sayfa CDN'deki statik dosya olmaktan çıkıp sunucuda üretilir. Tüm iddiası "ziyaretçinin makinesinde çalışır" olan bir site için bu kötü bir takas. Üstelik buradaki CSP bilinen bir deliği yamamıyor, derinlemesine savunma: HTML'i React üretiyor (kaçışlamayı o yapıyor) ve ziyaretçinin kontrol ettiği tek metin dosya adı.
+
+**Yine de kazandırdığı az değil:** enjekte edilmiş bir script hiçbir şey *yükleyemez* (dış kaynak, object, frame yok), form'u başka yere yönlendiremez, `<base>` ile her göreli linki kaçıramaz, ve sayfa kimse tarafından frame'lenemez.
+
+**Doğrulandı (production build, localhost:3100):**
+- Boyama, kaydetme, galeri thumbnail'leri (`blob:` URL'ler) → konsol temiz, tek bir CSP ihlali yok.
+- **CPU yedeği:** WebGL2 kapatılıp Web Worker yolu çalıştırıldı — `worker-src` gerçekten sınandı, hata yok.
+- **Frame testi:** sayfa kendi origin'inden bile iframe'e alınamadı (`documentReachable: false`).
+- Dev'de CSP HMR soketini kırdı (`upgrade-insecure-requests`, `ws://`'i `wss://`'e yükseltiyor). Development'ta `ws:` ekli ve `upgrade-insecure-requests` kapalı; production'da ikisi de yok, çünkü site hiç soket açmıyor.
+
+### npm audit — 7 moderate → 0
+
+Tek gerçek uyarı: **minimatch glob-parts amplification** (ReDoS, GHSA-g3hv-75wg-m249), `@typescript-eslint/typescript-estree@8.72.1 → minimatch@10.2.6` üzerinden geliyordu.
+
+**Sömürülebilir bir yol yoktu:** bu bir `devDependency`, tarayıcıya hiç gitmiyor, Vercel'de hiç çalışmıyor, ve beslediği glob desenleri bizim kendi ESLint ayarımız. Yine de düzeltmesi ucuzdu, o yüzden düzeltildi — `package.json`'a hedefli bir `overrides` konuldu:
+
+```json
+"overrides": { "@typescript-eslint/typescript-estree": { "minimatch": "^11.0.1" } }
+```
+
+Kapsamı bilerek dar: düz bir `"minimatch": "^11"` override'ı, ağacın başka yerindeki `minimatch@3.1.5`'i de 3'ten 11'e zıplatırdı — o sürüm zaten açık aralığın (7.0.0–11.0.0) dışında. Sonrasında `npm audit` → **0 vulnerabilities**, lint ve build sağlam.
+
+**Kabul kriteri:** Yazılı güvenlik kontrol raporu, 9 maddenin tamamı ✅ — **karşılandı.**
 
 ---
 
@@ -669,7 +739,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 4 — Supabase & Auth | ⊘ Kodu yazıldı, bağlanmadı | 2026-11-13 | Kod hazır ve uyku modunda. Supabase projesi bilerek açılmadı — gerekçe 2.3. Site anahtarsız sorunsuz çalışıyor. |
 | FAZ 5 — Kaydetme & galeri | ✅ Bitti | 2026-11-13 | Galeri Supabase yerine tarayıcıda (IndexedDB). 1600px/0.82 + 400px thumbnail + 20 sınırı korundu. Kaydet/aç/indir/sil tarayıcıda test edildi. |
 | FAZ 6 — Cilalama | ✅ Bitti | 2026-11-13 | Hata sınırları + 404, SEO (sitemap/robots/OG/icon/canonical), slider dokunma hedefi 4→24 px, skip link + focus tuzağı + aria-live. Lighthouse masaüstü 98-100, mobil 90; a11y her sayfada 100. |
-| FAZ 7 — Güvenlik denetimi | ◻ Bekliyor | | |
+| FAZ 7 — Güvenlik denetimi | ✅ Bitti | 2026-11-13 | 9 maddenin tamamı ✅, rapor 7.1'de. Güvenlik başlıkları + CSP eklendi ve production build'de ölçüldü. EXIF silinmesi kanarya testiyle kanıtlandı. Üçüncü parti istek sayısı 0. npm audit 7 → 0. |
 | FAZ 8 — Yayın | ◻ Bekliyor | | |
 
 ---
