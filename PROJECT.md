@@ -401,9 +401,9 @@ create policy "own_folder_all" on storage.objects
 ### ◻ FAZ 3 — YAĞLI BOYA MOTORU ⭐ (En önemli faz)
 **Amaç:** Bölüm 3'teki pipeline'ı çalıştırmak. Bu faz bitince **site aslında bitmiş** sayılır — backend olmadan tam kullanılabilir.
 
-- [ ] `lib/engine/` klasör yapısı, WebGL2 context kurulumu
-- [ ] Shader: denoise
-- [ ] Shader: **anizotropik Kuwahara** (yapı tensörü + 8 sektör)
+- [x] `lib/engine/` klasör yapısı, WebGL2 context kurulumu
+- [x] Shader: denoise
+- [x] Shader: **anizotropik Kuwahara** (yapı tensörü + 8 sektör)
 - [ ] Shader: impasto (height → normal → lighting)
 - [ ] Shader: old master tone curve
 - [ ] Shader: kanvas dokusu (prosedürel)
@@ -412,13 +412,31 @@ create policy "own_folder_all" on storage.objects
 - [ ] 5 preset'in parametre tanımları (`lib/engine/presets.ts`)
 - [ ] Kontrol paneli: sliderlar + preset seçici (debounce 150ms)
 - [ ] Hızlı önizleme (1024px) / tam kalite render ayrımı
-- [ ] Before/After sürgülü karşılaştırma
+- [x] Before/After sürgülü karşılaştırma
 - [ ] Altın çerçeve + künye bindirmesi (opsiyonel, export'a dahil)
 - [ ] PNG / JPEG indirme
 - [ ] Web Worker CPU fallback (WebGL2 yoksa)
 - [ ] Commit + push
 
 **Kabul kriteri:** Bir portre fotoğrafı yüklendiğinde "Ottoman Court" preset'i ile çıkan sonuç, filtre uygulanmış fotoğraf gibi değil **boyanmış tablo** gibi görünüyor. 2048px render masaüstünde 3 saniyenin altında bitiyor.
+
+**3a yapıldı (2026-11-13) — fırça darbeleri:**
+- `lib/engine/gl.ts` — WebGL2 bağlamı, shader derleme, render hedefleri. Geometri yok: vertex shader üç köşesini `gl_VertexID`'den türetiyor.
+- `lib/engine/shaders/denoise.ts` — sRGB'den lineer renk uzayına geçiş + 5×5 bilateral. Lineer uzay şart: sRGB değerlerini ortalamak yanlış renk verir, sonraki her adım ortalama alıyor.
+- `lib/engine/shaders/tensor.ts` — Sobel ile yapı tensörü, ardından ayrılabilir Gauss ile yumuşatma. Tensörü yumuşatmak açıyı yumuşatmaktan farklı ve doğru olan: 10° ile 170° açıların ortalaması 90° çıkar ki saçmadır, tensörlerin ortalaması yataydır ki doğrudur.
+- `lib/engine/shaders/kuwahara.ts` — 8 sektörlü anizotropik Kuwahara. Sektörler seçilmiyor, varyanslarına göre ağırlıklandırılıyor; tek kazanan seçmek komşu piksellerde zıplamaya ve lekelenmeye yol açıyor.
+- `components/BeforeAfter.tsx` — sürüklenebilir ayırıcı, klavyeyle de çalışıyor (PROJECT.md 3.5).
+- `components/Slider.tsx` + Studio'da 4 kontrol, 150 ms debounce ile yeniden render.
+
+**İki hata bulundu ve düzeltildi:**
+1. **Elips yanlış yöne uzuyordu.** Özvektör `(λ1 - g, f)` formülü tam yatay bir kenarda (f = 0 ve λ1 = g) sıfır vektör veriyor ve yön kayboluyor. Yedek tahmin yarı yarıya yanlış olduğu için fırça kenar boyunca değil kenarın üstünden geçiyordu — yani boyamak yerine bulandırıyordu. Çift açı formülüne geçildi: `θ = 0.5·atan(2f, e−g)`, bu formülün böyle bir boşluğu yok.
+2. **Süre ölçümü yanlıştı.** WebGL işi sadece kuyruğa alıyor; render çağrısının etrafını ölçmek her zaman "1 ms" veriyordu. Artık tek piksel geri okunarak GPU'nun bitirmesi bekleniyor, ölçüm gerçek.
+
+**Varsayılanlar teoriyle değil çıktıya bakarak seçildi:** fırça 8 px, keskinlik 14, kontur 2, denoise 0.3. Keskinlik 12'nin altında benzer sakinlikteki sektörler birbirine karışıp görüntüyü yumuşatıyor; kontur 2'nin altında darbeler konturu takip edecek kadar uzamıyor.
+
+**Ölçüm:** 1000×750 önizleme, fırça 8 → ~270 ms. 2048 tam çözünürlük henüz ölçülmedi; PROJECT.md'nin 3 saniye hedefi 3c'de tam kalite render eklenince doğrulanacak.
+
+**Sırada 3b:** impasto, old master tonlama, kanvas dokusu, çatlak, vinyet.
 
 > **Claude Code'a not:** Kuwahara'nın yönlü (anizotropik) versiyonunu kullan, basit kare-blok Kuwahara yetersiz kalır ve "poster filtresi" gibi görünür. Fırça darbeleri görüntünün konturlarını takip etmeli. Bu fazda kaliteden ödün verme — gerekirse bu fazı 3 alt adımda yap ve her birinde bana ekran görüntüsü göster.
 
@@ -548,7 +566,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
-| FAZ 3 — Yağlı boya motoru | ◻ Bekliyor | | |
+| FAZ 3 — Yağlı boya motoru | 🔄 3a bitti | 2026-11-13 | WebGL2 + denoise + anizotropik Kuwahara + before/after çalışıyor. Sırada impasto ve tonlama. |
 | FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
 | FAZ 5 — Kaydetme & galeri | ◻ Bekliyor | | |
 | FAZ 6 — Cilalama | ◻ Bekliyor | | |
