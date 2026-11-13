@@ -16,6 +16,7 @@ import {
   OilPaintEngine,
   type PaintSettings,
 } from "@/lib/engine/pipeline";
+import { CpuEngine, isSuperseded } from "@/lib/engine/cpuEngine";
 import {
   DEFAULT_PRESET,
   matchPreset,
@@ -31,6 +32,14 @@ import {
 
 /** Previews run small so a slider drag feels instant (PROJECT.md 3.4). */
 const PREVIEW_EDGE = 1024;
+
+/**
+ * The CPU renderer works on a much smaller picture. It is tens of times
+ * slower per pixel, and a device without WebGL2 is not a fast device; at
+ * 1024px a preview would take the best part of a minute, which is not a
+ * preview any more.
+ */
+const CPU_PREVIEW_EDGE = 560;
 
 type Loaded = {
   name: string;
@@ -97,7 +106,13 @@ export default function Studio() {
   const [engineError, setEngineError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [compatibility, setCompatibility] = useState(false);
+  const [cpuProgress, setCpuProgress] = useState<number | null>(null);
+
   const engineRef = useRef<OilPaintEngine | null>(null);
+  const cpuRef = useRef<CpuEngine | null>(null);
+  /** The photograph at preview size: whichever engine runs, it reads this. */
+  const sourceRef = useRef<HTMLCanvasElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const paintedUrlRef = useRef<string | null>(null);
@@ -114,39 +129,63 @@ export default function Studio() {
     return () => {
       engineRef.current?.dispose();
       engineRef.current = null;
+      cpuRef.current?.dispose();
+      cpuRef.current = null;
     };
   }, []);
 
   // Re-render 150ms after the controls stop moving (PROJECT.md 3.4).
   useEffect(() => {
-    const engine = engineRef.current;
-    if (!loaded || !engine) return;
+    const source = sourceRef.current;
+    if (!loaded || !source) return;
 
     let cancelled = false;
     const timer = window.setTimeout(async () => {
-      try {
-        const start = performance.now();
-        const canvas = engine.render(settings);
-        const elapsed = performance.now() - start;
-        previewCanvasRef.current = snapshot(canvas);
+      const start = performance.now();
 
+      const publish = async (canvas: HTMLCanvasElement) => {
+        previewCanvasRef.current = canvas;
         const url = await toBlobUrl(canvas);
         if (cancelled) {
           URL.revokeObjectURL(url);
           return;
         }
-
         if (paintedUrlRef.current) URL.revokeObjectURL(paintedUrlRef.current);
         setPaintedUrl(url);
-        setRenderMs(Math.round(elapsed));
-      } catch (cause) {
-        if (!cancelled) {
-          setEngineError(
-            cause instanceof GLError
-              ? cause.message
-              : "The painting engine stopped unexpectedly."
-          );
+        setRenderMs(Math.round(performance.now() - start));
+      };
+
+      try {
+        const gl = engineRef.current;
+        if (gl) {
+          await publish(snapshot(gl.render(settings)));
+          return;
         }
+
+        const cpu = cpuRef.current;
+        if (!cpu) return;
+
+        setCpuProgress(0);
+        const data = await cpu.render(source, settings, (done) => {
+          if (!cancelled) setCpuProgress(done);
+        });
+        if (cancelled) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = data.width;
+        canvas.height = data.height;
+        canvas.getContext("2d")?.putImageData(data, 0, 0);
+        await publish(canvas);
+        setCpuProgress(null);
+      } catch (cause) {
+        // A render abandoned because a newer one arrived is not a failure.
+        if (cancelled || isSuperseded(cause)) return;
+        setCpuProgress(null);
+        setEngineError(
+          cause instanceof GLError
+            ? cause.message
+            : "The painting engine stopped unexpectedly."
+        );
       }
     }, 150);
 
@@ -190,25 +229,44 @@ export default function Studio() {
       }
 
       const image = await decodeImage(file, check.bytes);
-      const preview = scaleCanvas(image.canvas, PREVIEW_EDGE);
-      const originalUrl = await toBlobUrl(preview);
 
       clearFullRender();
       engineRef.current?.dispose();
+      cpuRef.current?.dispose();
+      engineRef.current = null;
+      cpuRef.current = null;
+
+      // Try the graphics card first; fall back to the worker if this device
+      // has no WebGL2 to offer.
+      let preview = scaleCanvas(image.canvas, PREVIEW_EDGE);
+      let onCpu = false;
+
       try {
         engineRef.current = new OilPaintEngine(
           preview,
           preview.width,
           preview.height
         );
-      } catch (cause) {
+        setEngineError(null);
+      } catch (glCause) {
         engineRef.current = null;
-        setEngineError(
-          cause instanceof GLError
-            ? cause.message + " A compatibility mode is coming in a later step."
-            : "The painting engine could not start on this device."
-        );
+        onCpu = true;
+        preview = scaleCanvas(image.canvas, CPU_PREVIEW_EDGE);
+        try {
+          cpuRef.current = new CpuEngine();
+          setEngineError(null);
+        } catch {
+          setEngineError(
+            glCause instanceof GLError
+              ? glCause.message
+              : "The painting engine could not start on this device."
+          );
+        }
       }
+
+      setCompatibility(onCpu);
+      sourceRef.current = preview;
+      const originalUrl = await toBlobUrl(preview);
 
       setPaintedUrl((previous) => {
         if (previous) URL.revokeObjectURL(previous);
@@ -323,6 +381,11 @@ export default function Studio() {
   const reset = useCallback(() => {
     engineRef.current?.dispose();
     engineRef.current = null;
+    cpuRef.current?.dispose();
+    cpuRef.current = null;
+    sourceRef.current = null;
+    setCompatibility(false);
+    setCpuProgress(null);
     previewCanvasRef.current = null;
     fullCanvasRef.current = null;
     setLoaded((previous) => {
@@ -422,6 +485,32 @@ export default function Studio() {
               </p>
             )}
 
+            {compatibility && engineError === null && (
+              <div className="rounded-sm border border-turquoise/40 bg-turquoise/5 px-4 py-3">
+                <p className="text-xs leading-relaxed text-paper">
+                  Running in compatibility mode. This device has no WebGL2, so
+                  the painting is being done by the processor instead of the
+                  graphics card — slower, at a smaller size, and without the
+                  thick-paint relief.
+                </p>
+                {cpuProgress !== null && (
+                  <div
+                    className="mt-3 h-1 w-full overflow-hidden rounded-full bg-surface-2"
+                    role="progressbar"
+                    aria-label="Painting"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(cpuProgress * 100)}
+                  >
+                    <div
+                      className="h-full bg-turquoise transition-[width] duration-200"
+                      style={{ width: `${Math.round(cpuProgress * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-4 rounded-sm border border-white/10 bg-surface/50 p-5">
               <h2 className="font-serif text-lg text-paper">Take it home</h2>
 
@@ -453,20 +542,24 @@ export default function Studio() {
               <button
                 type="button"
                 onClick={renderFull}
-                disabled={rendering || off}
+                disabled={rendering || off || compatibility}
                 className="w-full text-xs text-turquoise underline-offset-4 transition-colors duration-200 hover:underline disabled:text-muted disabled:no-underline"
               >
-                {rendering
-                  ? "Painting at full size…"
-                  : fullUrl
-                    ? `Full size ready · ${loaded.image.width} × ${loaded.image.height}`
-                    : `Render full quality (${loaded.image.width} × ${loaded.image.height})`}
+                {compatibility
+                  ? "Full-size rendering needs WebGL2"
+                  : rendering
+                    ? "Painting at full size…"
+                    : fullUrl
+                      ? `Full size ready · ${loaded.image.width} × ${loaded.image.height}`
+                      : `Render full quality (${loaded.image.width} × ${loaded.image.height})`}
               </button>
 
               <p className="text-[11px] leading-relaxed text-muted">
-                {fullUrl
-                  ? "Downloads will use the full-size painting."
-                  : "Downloads use the preview until you render full quality."}
+                {compatibility
+                  ? "Downloads will use the compatibility-mode painting."
+                  : fullUrl
+                    ? "Downloads will use the full-size painting."
+                    : "Downloads use the preview until you render full quality."}
               </p>
             </div>
 
