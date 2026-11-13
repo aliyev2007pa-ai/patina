@@ -557,15 +557,34 @@ Kod tarafı bitti (commit `44eb413`). Supabase projesi **açılmadı** — gerek
 
 ---
 
-### ◻ FAZ 6 — Cilalama (polish)
-- [ ] Tüm async işlemler için loading/skeleton durumları
-- [ ] Hata sınırları (error boundary) ve kullanıcı dostu hata sayfaları
-- [ ] Boş durumlar ("Your gallery is empty — go paint something")
-- [ ] Mobil: dokunmatik slider, dikey yerleşim, 320px testi
-- [ ] Erişilebilirlik: klavye ile gezinme, focus görünürlüğü, alt metinler, kontrast AA
-- [ ] SEO: metadata, OpenGraph görseli, favicon, `sitemap.ts`, `robots.ts`
-- [ ] Lighthouse: Performance ve Accessibility ≥ 90
-- [ ] Commit + push
+### ✅ FAZ 6 — Cilalama (polish)
+- [x] Tüm async işlemler için loading/skeleton durumları — DropZone "Reading your photo…", galeri iskeleti, "Painting at full size…", "Hanging it up…"
+- [x] Hata sınırları: `app/error.tsx` (+ `reset()`), `app/global-error.tsx` (satır içi stil — layout çöktüyse stylesheet'e güvenilemez), `app/not-found.tsx`
+- [x] Boş durumlar — galeri "Nothing on the wall yet" + "Go paint something"
+- [x] Mobil: **slider dokunma hedefi 4 px'den 24 px'e çıkarıldı** (asıl hata buydu), 320 px'de 6 sayfanın hiçbirinde yatay taşma yok
+- [x] Erişilebilirlik: skip link, galeri görüntüleyicisinde focus tuzağı + Escape + odağı geri verme, studio'da `aria-live` durum satırı, kontrast düzeltmesi
+- [x] SEO: `metadataBase`, başlık şablonu, sayfa başına canonical, OpenGraph kartı, `icon.svg`, `sitemap.ts`, `robots.ts`
+- [x] Lighthouse ≥ 90 — aşağıdaki tabloya bak
+- [x] Commit + push (`36daf12`, `0b286a4`)
+
+**Lighthouse (canlı site, 2026-11-13):**
+
+| Sayfa | Perf | A11y | Best | SEO |
+|---|---|---|---|---|
+| `/` masaüstü | 98 | 100 | 100 | 100 |
+| `/studio` masaüstü | 100 | 100 | 100 | 100 |
+| `/about` masaüstü | 100 | 100 | 100 | 100 |
+| `/gallery` masaüstü | 100 | 100 | 100 | **66** ↓ |
+| `/` mobil | 90 | 100 | 100 | 100 |
+| `/studio` mobil | 90 | 100 | 100 | 100 |
+
+> **`/gallery` SEO 66 bilerek böyle** ve düzeltilmeyecek: sayfa `robots.ts` ile indekslemeye kapalı. Bir arama motoru oraya girse boş bir duvar görür — her tablo ziyaretçinin kendi tarayıcısında. Alternatifi, her zaman bozuk görünen bir arama sonucu olurdu.
+
+**Yapıldı (2026-11-13) — iki gerçek hata:**
+1. **Canonical'ı kök layout'a koymak hataydı.** Her sayfa onu miras alıyordu, yani `/about` kendini ana sayfanın kopyası ilan ediyordu — canonical bağlantısının arama motoruna söylediği şey tam olarak budur. Hiç koymamaktan kötü. Artık her sayfa kendi adresini yazıyor.
+2. **DropZone'daki "It stays on your device" satırı kontrastta kalıyordu:** 12 px'de `gold/70` → 4.38:1, küçük metnin gerektirdiği 4.5:1'in hemen altı. Tam altın yapıldı.
+
+**Not:** Slider'ların dokunma hedefi gerçek bir hataydı — eleman 4 px yüksekliğindeydi, yani telefonda ancak kazara basılabiliyordu. Track hâlâ 4 px görünüyor ama artık `::-webkit-slider-runnable-track` ile çiziliyor; elemanın kendisi 24 px.
 
 ---
 
@@ -649,7 +668,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 3 — Yağlı boya motoru | ✅ Bitti | 2026-11-13 | 13 geçişli WebGL2 boru hattı, 6 preset, tam kalite render (2048 → 462 ms), PNG/JPEG indirme, çerçeve + künye, CPU yedeği. |
 | FAZ 4 — Supabase & Auth | ⊘ Kodu yazıldı, bağlanmadı | 2026-11-13 | Kod hazır ve uyku modunda. Supabase projesi bilerek açılmadı — gerekçe 2.3. Site anahtarsız sorunsuz çalışıyor. |
 | FAZ 5 — Kaydetme & galeri | ✅ Bitti | 2026-11-13 | Galeri Supabase yerine tarayıcıda (IndexedDB). 1600px/0.82 + 400px thumbnail + 20 sınırı korundu. Kaydet/aç/indir/sil tarayıcıda test edildi. |
-| FAZ 6 — Cilalama | ◻ Bekliyor | | |
+| FAZ 6 — Cilalama | ✅ Bitti | 2026-11-13 | Hata sınırları + 404, SEO (sitemap/robots/OG/icon/canonical), slider dokunma hedefi 4→24 px, skip link + focus tuzağı + aria-live. Lighthouse masaüstü 98-100, mobil 90; a11y her sayfada 100. |
 | FAZ 7 — Güvenlik denetimi | ◻ Bekliyor | | |
 | FAZ 8 — Yayın | ◻ Bekliyor | | |
 
