@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import BeforeAfter from "./BeforeAfter";
 import Button from "./Button";
 import DropZone from "./DropZone";
@@ -29,6 +30,11 @@ import {
   withFrame,
   type ExportFormat,
 } from "@/lib/engine/export";
+import {
+  GalleryError,
+  isAvailable as galleryAvailable,
+  save as keepPainting,
+} from "@/lib/gallery/store";
 
 /** Previews run small so a slider drag feels instant (PROJECT.md 3.4). */
 const PREVIEW_EDGE = 1024;
@@ -108,6 +114,9 @@ export default function Studio() {
 
   const [compatibility, setCompatibility] = useState(false);
   const [cpuProgress, setCpuProgress] = useState<number | null>(null);
+
+  const [keeping, setKeeping] = useState(false);
+  const [kept, setKept] = useState(false);
 
   const engineRef = useRef<OilPaintEngine | null>(null);
   const cpuRef = useRef<CpuEngine | null>(null);
@@ -208,6 +217,9 @@ export default function Studio() {
    */
   const clearFullRender = useCallback(() => {
     fullCanvasRef.current = null;
+    // The painting on the wall is now a different painting from the one on
+    // screen, so stop claiming this one is kept.
+    setKept(false);
     setFullMs(null);
     setFullUrl((previous) => {
       if (previous) URL.revokeObjectURL(previous);
@@ -378,6 +390,38 @@ export default function Studio() {
     [loaded, withGoldFrame, activePreset]
   );
 
+  /**
+   * Puts the painting on the gallery wall.
+   *
+   * The bare painting is stored, not the framed version: the frame is
+   * furniture, and the gallery draws its own around every picture. Downloading
+   * from the gallery adds one back on the way out, so nothing is lost by not
+   * keeping two copies of the same gold rectangle.
+   */
+  const keep = useCallback(async () => {
+    if (!loaded) return;
+    const source = fullCanvasRef.current ?? previewCanvasRef.current;
+    if (!source) return;
+
+    setKeeping(true);
+    setError(null);
+    try {
+      await keepPainting(source, {
+        title: loaded.name.replace(/\.[^.]+$/, "") || "Untitled",
+        style: activePreset ? presetById(activePreset).name : "Adjusted",
+      });
+      setKept(true);
+    } catch (cause) {
+      setError(
+        cause instanceof GalleryError
+          ? cause.message
+          : "The painting could not be kept. Downloading still works."
+      );
+    } finally {
+      setKeeping(false);
+    }
+  }, [loaded, activePreset]);
+
   const reset = useCallback(() => {
     engineRef.current?.dispose();
     engineRef.current = null;
@@ -418,6 +462,9 @@ export default function Studio() {
 
   const off = engineError !== null;
   const canDownload = paintedUrl !== null && !off;
+  // A private window will refuse to store anything; there is no point
+  // offering a button that cannot work.
+  const canKeep = canDownload && !keeping && galleryAvailable();
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -539,6 +586,29 @@ export default function Studio() {
                 </Button>
               </div>
 
+              {kept ? (
+                <div className="rounded-sm border border-turquoise/40 bg-turquoise/5 px-4 py-3">
+                  <p className="text-xs leading-relaxed text-paper">
+                    Hung on your wall.{" "}
+                    <Link
+                      href="/gallery"
+                      className="text-turquoise underline-offset-4 hover:underline"
+                    >
+                      See the gallery
+                    </Link>
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  onClick={keep}
+                  disabled={!canKeep}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  {keeping ? "Hanging it up…" : "Keep in gallery"}
+                </Button>
+              )}
+
               <button
                 type="button"
                 onClick={renderFull}
@@ -556,10 +626,12 @@ export default function Studio() {
 
               <p className="text-[11px] leading-relaxed text-muted">
                 {compatibility
-                  ? "Downloads will use the compatibility-mode painting."
+                  ? "Downloads and keeping use the compatibility-mode painting."
                   : fullUrl
-                    ? "Downloads will use the full-size painting."
-                    : "Downloads use the preview until you render full quality."}
+                    ? "Downloads and keeping use the full-size painting."
+                    : "Downloads and keeping use the preview until you render full quality."}{" "}
+                Keeping stores the painting in this browser only — no account,
+                nothing uploaded. Download anything you want to keep for good.
               </p>
             </div>
 

@@ -21,7 +21,16 @@ import { NextResponse, type NextRequest } from "next/server";
  * them across rather than starting from a clean one. Getting this wrong
  * logs people out at random, which is miserable to debug.
  */
-const PROTECTED = ["/gallery"];
+/**
+ * Routes that need an account.
+ *
+ * Empty, deliberately. `/gallery` was going to be here, but the gallery now
+ * lives in the visitor's own browser (`lib/gallery/store.ts`), so demanding
+ * an account to reach it would lock people out of their own paintings. If
+ * Supabase settings are ever added, this list must stay empty unless a page
+ * genuinely reads something from the server.
+ */
+const PROTECTED: string[] = [];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

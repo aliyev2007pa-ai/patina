@@ -63,6 +63,11 @@ export default function AuthStatus() {
     router.refresh();
   }
 
+  // With no Supabase settings there are no accounts to sign in to, and a
+  // "Sign in" button that leads to an apology is worse than no button. The
+  // code below stays ready for the day settings arrive.
+  if (!isConfigured()) return null;
+
   if (!ready) {
     // Same height as the button, so the header does not jump when it arrives.
     return <span aria-hidden className="block h-9 w-20" />;

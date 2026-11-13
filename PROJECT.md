@@ -36,7 +36,7 @@ Bu kararlar sorulup onaylandı. Claude Code bunları **tartışmaya açmayacak**
 - Çevirme işlemi **%100 kullanıcının tarayıcısında**, WebGL2 shader ile yapılır.
 - **Bunun iki büyük avantajı var ve bunlar sitenin reklamı olacak:**
   1. **Sınırsız ve bedava** — sunucu maliyeti sıfır, kota yok, kuyruk yok, bekleme yok.
-  2. **Tam gizlilik** — fotoğraf kullanıcının cihazından **hiç çıkmaz**. Sunucuya gitmez. (Sadece kullanıcı "Save to gallery" derse yüklenir.) Bu, ana sayfada açıkça yazılacak: *"Your photo never leaves your device."*
+  2. **Tam gizlilik** — fotoğraf kullanıcının cihazından **hiç çıkmaz**. Sunucuya gitmez. ~~(Sadece kullanıcı "Save to gallery" derse yüklenir.)~~ **İstisna kalmadı:** galeri de tarayıcıda (bkz. 2.3). Bu, ana sayfada açıkça yazılıyor: *"Your photo never leaves your device."*
 
 ### 1.2 Supabase: Giriş (Auth) + Kişisel galeri (Storage + Database)
 - Supabase Auth ile e-posta/şifre girişi.
@@ -87,25 +87,33 @@ Bu 4 renk dışına çıkılmayacak (gri tonları ve şeffaflıklar serbest).
 | Servis | Plan | Limit | Bizim kullanımımız | Risk |
 |---|---|---|---|---|
 | Vercel | Hobby | 100 GB bant genişliği/ay, ticari olmayan kullanım | Statik site + küçük JS | Çok düşük |
-| Supabase | Free | 500 MB veritabanı | Sadece metin satırları (~1 KB/kayıt) | Yok |
-| Supabase | Free | **1 GB depolama** | Tablo görselleri — **kota kuralı şart, bkz. 2.1** | ⚠️ Dikkat |
-| Supabase | Free | 5 GB egress/ay | Galeri görüntüleme | Orta — thumbnail şart |
-| Supabase | Free | 50.000 aylık aktif kullanıcı | Çok yeterli | Yok |
+| ~~Supabase~~ | — | — | **Kullanılmıyor — bkz. 2.3** | Yok |
+| Tarayıcı deposu (IndexedDB) | — | Tarayıcının verdiği pay (genelde GB'larca) | Galeri — **kota kuralı yine de uygulanıyor, bkz. 2.1** | Yok (sunucu yok) |
 | GitHub | Free | Sınırsız public repo | Kod | Yok |
 | Google Fonts | Free | — | 2 font | Yok |
 
-### 2.1 Kota koruma kuralları (ZORUNLU — FAZ 5'te uygulanacak)
-1 GB depolamayı korumak için:
-- Kaydedilen görsel **uzun kenarı en fazla 1600 px** ve **JPEG kalite 0.82** olacak → ortalama ~350 KB.
-- Her kayıt için ayrıca **400 px thumbnail** üretilip ayrı dosya olarak yüklenecek (~40 KB). Galeri listesi **sadece thumbnail** gösterecek — egress'i 10 kat düşürür.
-- **Kullanıcı başına en fazla 20 kayıtlı tablo.** 21.'de "Delete one to save a new one" uyarısı.
-- Yükleme öncesi dosya boyutu kontrolü: 2 MB üstü reddedilecek.
-- Bu kurallar hem istemci tarafında hem veritabanı seviyesinde (CHECK / policy) uygulanacak.
+### 2.1 Kota koruma kuralları (ZORUNLU — FAZ 5'te uygulandı ✅)
+Galeri artık sunucuda değil, ziyaretçinin tarayıcısında (bkz. 2.3). Ama **bu kurallar aynen korundu**, çünkü sebepleri Supabase'den bağımsızdı: bir tarayıcı deposunu da şişirmemek, galeriyi hızlı açmak:
+- Kaydedilen görsel **uzun kenarı en fazla 1600 px** ve **JPEG kalite 0.82** → ortalama ~350 KB. `lib/gallery/store.ts`
+- Her kayıt için ayrıca **400 px thumbnail** ayrı kayıt olarak üretilir (~40 KB). Galeri ızgarası **sadece thumbnail** okur — sayfa 7 MB yerine ~800 KB.
+- **En fazla 20 kayıtlı tablo.** 21.'de *"You have 20 paintings kept. Delete one to keep a new one."* Sayım iki kez yapılır: pahalı JPEG kodlamasından önce (boşuna beklenmesin) ve yazma işleminin **içinde** (asıl geçerli olan kontrol; IndexedDB işlemleri sıralı olduğu için başka bir sekme yarışamaz).
+- Yüklenen fotoğraf için dosya boyutu kontrolü zaten FAZ 2'de var (10 MB).
 
-> **Matematik:** 1 GB ÷ (350 KB + 40 KB) ≈ 2.700 tablo ≈ 135 kullanıcı × 20 tablo. Öğrenme projesi için fazlasıyla yeterli.
+> **Yapıldı (2026-11-13):** 20 sınırı tarayıcıda gerçekten test edildi — 20 sahte kayıt yazılıp 21. denendi, doğru uyarı çıktı.
 
-### 2.2 Supabase "uyku" uyarısı
-Ücretsiz Supabase projeleri **1 hafta hiç istek almazsa duraklatılır (paused)** ve panelden elle açılması gerekir. Siteye haftada bir girmen yeterli. İstersen FAZ 8'de GitHub Actions ile haftalık otomatik "ping" eklenir (o da ücretsiz).
+### 2.2 ~~Supabase "uyku" uyarısı~~ — artık geçersiz
+Ücretsiz Supabase projeleri 1 hafta hiç istek almazsa duraklatılır. **Bu, Supabase'i kullanmama kararının ana sebeplerinden biri oldu** (bkz. 2.3). Tarayıcı deposu uyumaz, uyandırılmaz, panel istemez.
+
+### 2.3 KARAR: Supabase kullanılmıyor (2026-11-13, Aliyev onayladı)
+FAZ 4'ün kodu yazıldı ve çalışıyordu; **bağlanmadan önce durup şunu sorduk: bu site buna gerçekten muhtaç mı?** Değildi. Supabase'in tek işi galeriydi, ve galeriyi tarayıcıda tutmak üç şey kazandırdı:
+
+1. **Gizlilik iddiası tam oldu.** Eskiden "fotoğrafın cihazından çıkmaz — *sadece Save to gallery dersen yüklenir*" diyorduk. Artık istisna yok. Bu, projenin en güçlü cümlesi ve benzeri sitelerin çoğunun söyleyemediği şey.
+2. **0 ₺ gerçekten bakımsız 0 ₺ oldu.** Uyuyan proje yok, uyandırılacak panel yok, haftalık ping yok.
+3. **Güvenlik yüzeyi küçüldü.** RLS politikası, depo kotası, başkasının fotoğrafını barındırma sorumluluğu — hiçbiri yok. FAZ 7 buna göre küçülüyor.
+
+**Dürüst bedeli:** galeri tek tarayıcıya ait. Site verisi temizlenirse boşalır, telefona taşınmaz. Site bunu üç yerde açıkça söylüyor (studio, galeri sayfası, about). Kalıcı saklama yolu indirmek.
+
+**Kod silinmedi:** `lib/supabase/*`, `middleware.ts` ve `/login` yerinde duruyor, anahtar olmadığı için uyku modunda. Header'da "Sign in" **gösterilmiyor** — çalışmayan bir butondan iyidir. `middleware.ts`'teki `PROTECTED` listesi bilerek boş: galeri yerel olduğu için hesap şartı koymak insanı kendi tablosundan kilitler.
 
 ---
 
@@ -207,7 +215,12 @@ Footer: GitHub linki · "Made with Next.js, Supabase & Vercel" · "100% free, no
 
 ---
 
-## 5. VERİTABANI ŞEMASI (Supabase)
+## 5. ~~VERİTABANI ŞEMASI (Supabase)~~ — çalıştırılmadı
+
+> **Bu SQL hiç çalıştırılmadı.** Galeri tarayıcıda tutuluyor (bkz. 2.3), sunucuda tablo yok.
+> Şema burada duruyor çünkü kararın neyi bıraktığını göstermeye değer: aşağıdaki RLS politikaları,
+> "anon key herkese açıktır, tabloyu koruyan şey politikalardır" dersinin somut hali.
+> Fikir değişirse tek yapılacak iş bu bloğu Supabase SQL Editor'da çalıştırmak.
 
 ```sql
 -- Tablo: kaydedilen eserler
@@ -499,38 +512,48 @@ Aliyev bunu anlayıp **filtre tavanını kabul etti** ve son bir kalite turu ist
 
 ---
 
-### ◻ FAZ 4 — Supabase ve giriş sistemi
+### ⊘ FAZ 4 — Supabase ve giriş sistemi — **kodu yazıldı, bilerek bağlanmadı**
 **Amaç:** Hesap altyapısı. Henüz kayıt özelliği yok, sadece giriş/çıkış.
 
-- [ ] Supabase projesi oluştur (bölge: Frankfurt — Bakü'ye en yakın ücretsiz bölge)
-- [ ] `.env.local` + Vercel environment variables (URL ve ANON_KEY)
-- [ ] `@supabase/supabase-js` + `@supabase/ssr` kurulumu
-- [ ] `lib/supabase/client.ts` ve `lib/supabase/server.ts`
-- [ ] `/login`: kayıt ol / giriş yap (sekmeli), e-posta doğrulama akışı
-- [ ] Header'da oturum durumu (Sign in ↔ avatar + Sign out)
-- [ ] `middleware.ts` ile oturum yenileme
-- [ ] `/gallery` korumalı rota (giriş yoksa `/login`'e yönlendir)
-- [ ] Commit + push, canlıda giriş testi
+Kod tarafı bitti (commit `44eb413`). Supabase projesi **açılmadı** — gerekçe 2.3'te.
 
-**Kabul kriteri:** Canlı sitede kayıt olup e-postayı doğrulayıp giriş yapabiliyorum, sayfayı yenileyince oturum kaybolmuyor.
+- [x] `@supabase/supabase-js` + `@supabase/ssr` kurulumu
+- [x] `lib/supabase/client.ts` ve `lib/supabase/server.ts`
+- [x] `/login`: kayıt ol / giriş yap (sekmeli), e-posta doğrulama akışı
+- [x] Header'da oturum durumu — **anahtar yoksa hiç gösterilmiyor**
+- [x] `middleware.ts` ile oturum yenileme
+- [x] `/gallery` korumalı rota → **geri alındı**, galeri yerel olduğu için koruma yanlış olurdu
+- [ ] ~~Supabase projesi oluştur (Frankfurt)~~ — yapılmadı, bkz. 2.3
+- [ ] ~~`.env.local` + Vercel environment variables~~ — yapılmadı, bkz. 2.3
+- [ ] ~~Canlıda giriş testi~~ — yapılamaz, hesap sistemi kapalı
+
+**Kabul kriteri (revize):** Anahtar olmadan site hiçbir yerde hata vermiyor, hesap gerektiren hiçbir şey görünmüyor. ✅ Doğrulandı.
 
 ---
 
-### ◻ FAZ 5 — Kaydetme ve galeri
+### ✅ FAZ 5 — Kaydetme ve galeri *(tarayıcıda)*
 **Amaç:** Tabloları kalıcı saklamak. Kota kuralları burada uygulanır.
+**Sapma:** Depo Supabase değil, tarayıcının kendi veritabanı (IndexedDB). Gerekçe 2.3.
 
-- [ ] Bölüm 5'teki SQL'i Supabase SQL Editor'da çalıştır (tablo + RLS + trigger)
-- [ ] `paintings` bucket'ı (private) + storage policy'leri
-- [ ] "Save to gallery" butonu (sadece giriş yapmışsa aktif; değilse "Sign in to save" ipucu)
-- [ ] Yükleme öncesi: 1600px'e küçült, JPEG 0.82, 400px thumbnail üret
-- [ ] Storage'a iki dosya + veritabanına satır
-- [ ] `/gallery`: thumbnail grid, altın çerçeve + künye (title, preset, tarih)
-- [ ] Tabloya tıklayınca signed URL ile tam boyut görüntüle + indir
-- [ ] Silme (storage dosyaları + db satırı birlikte)
-- [ ] Kota hatası (`QUOTA_EXCEEDED`) için anlaşılır mesaj: *"You've reached 20 saved paintings. Delete one to save a new one."*
-- [ ] Commit + push
+- [x] ~~Bölüm 5'teki SQL~~ → `lib/gallery/store.ts`: iki object store (`paintings` = künye + thumbnail, `images` = tam boy), `savedAt` index'i
+- [x] ~~`paintings` bucket'ı~~ → gerek yok, dosya yüklenmiyor
+- [x] **"Keep in gallery"** butonu (giriş şartı yok; özel sekmede depo kapalıysa buton da kapalı)
+- [x] Kayıttan önce: 1600 px'e küçült, JPEG 0.82, ayrıca 400 px thumbnail
+- [x] İki kayıt **tek işlemde** yazılıyor — tam boy yazılamazsa künye de geri alınıyor, duvarda boş çerçeve kalmıyor
+- [x] `/gallery`: thumbnail ızgarası, altın çerçeve + künye (title, preset, yıl)
+- [x] Tabloya tıklayınca tam boy görüntüle + indir (çerçeve **çıkışta** ekleniyor, iki kopya saklanmıyor)
+- [x] Silme — iki kayıt birlikte, iki adımlı onay ("Delete" → "Delete for good")
+- [x] Kota mesajı: *"You have 20 paintings kept. Delete one to keep a new one."*
+- [x] Boş durum, yükleme iskeleti, depo kapalı durumu
+- [x] Commit + push
 
-**Kabul kriteri:** Kaydettiğim tablo galeride görünüyor, çıkış yapıp başka hesapla girince **görünmüyor** (RLS çalışıyor). Sildiğimde Supabase Storage'da da dosya kalmıyor.
+**Kabul kriteri (revize):** Kaydettiğim tablo galeride görünüyor; sildiğimde tarayıcı deposunda da kalmıyor; 21. tabloda uyarı çıkıyor. ✅ Hepsi tarayıcıda test edildi.
+
+**Yapıldı (2026-11-13):**
+- Yeni: `lib/gallery/store.ts`, `components/GalleryWall.tsx`. Değişen: `Studio.tsx`, `app/gallery/page.tsx`, `app/about/page.tsx`, `Footer.tsx`, `AuthStatus.tsx`, `middleware.ts`. Silinen: `components/ComingSoon.tsx` (artık kullanılmıyor).
+- `react-hooks/set-state-in-effect` kuralı yine çıktı: `load()` ilk `await`'ten **önce** state yazıyordu. Çözüm, `isAvailable()` kontrolünü bileşenden kaldırıp depoya bırakmak oldu — kural uyarmakta haklıydı, kontrol zaten iki yerde duruyordu.
+- Tam boy görüntüleyicide resim `60vh` ile sınırlandı; uzun bir tabloda Kapat butonu ekranın altına kaçıyor, pencere kapana dönüyordu.
+- Site metinleri düzeltildi: about'taki "hesap açarsan yüklenir" istisnası kaldırıldı, footer'daki "Supabase" → "WebGL", teknoloji listesinde Supabase → IndexedDB.
 
 ---
 
@@ -624,8 +647,8 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
 | FAZ 3 — Yağlı boya motoru | ✅ Bitti | 2026-11-13 | 13 geçişli WebGL2 boru hattı, 6 preset, tam kalite render (2048 → 462 ms), PNG/JPEG indirme, çerçeve + künye, CPU yedeği. |
-| FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
-| FAZ 5 — Kaydetme & galeri | ◻ Bekliyor | | |
+| FAZ 4 — Supabase & Auth | ⊘ Kodu yazıldı, bağlanmadı | 2026-11-13 | Kod hazır ve uyku modunda. Supabase projesi bilerek açılmadı — gerekçe 2.3. Site anahtarsız sorunsuz çalışıyor. |
+| FAZ 5 — Kaydetme & galeri | ✅ Bitti | 2026-11-13 | Galeri Supabase yerine tarayıcıda (IndexedDB). 1600px/0.82 + 400px thumbnail + 20 sınırı korundu. Kaydet/aç/indir/sil tarayıcıda test edildi. |
 | FAZ 6 — Cilalama | ◻ Bekliyor | | |
 | FAZ 7 — Güvenlik denetimi | ◻ Bekliyor | | |
 | FAZ 8 — Yayın | ◻ Bekliyor | | |

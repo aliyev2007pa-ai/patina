@@ -18,7 +18,7 @@ export default function Footer() {
         >
           Source on GitHub
         </Link>
-        <p>Made with Next.js, Supabase &amp; Vercel</p>
+        <p>Made with Next.js, WebGL &amp; Vercel</p>
         <p className="text-gold/80">100% free, no ads, no tracking</p>
       </div>
     </footer>

@@ -51,7 +51,7 @@ const stack = [
   { name: "Next.js", role: "The site itself, in TypeScript" },
   { name: "WebGL2", role: "The painting engine, running on your graphics card" },
   { name: "Tailwind CSS", role: "The styling" },
-  { name: "Supabase", role: "Accounts and the saved gallery" },
+  { name: "IndexedDB", role: "The gallery, kept in your own browser" },
   { name: "Vercel", role: "Hosting" },
 ];
 
@@ -90,10 +90,16 @@ export default function AboutPage() {
         receives it.
       </p>
       <p className="mt-4 text-base leading-relaxed text-muted">
-        The single exception is explicit: if you create an account and press{" "}
-        <span className="text-paper">Save to gallery</span>, that finished
-        painting — and only that one — is uploaded so it can hang in your
-        gallery. Everything else works, forever, without an account.
+        There is no exception, not even for the gallery. Pressing{" "}
+        <span className="text-paper">Keep in gallery</span> stores the painting
+        in your own browser, on your own machine — the same place this site
+        keeps which slider you moved last. Nothing is uploaded, which is why
+        Patina has never asked you for an email address.
+      </p>
+      <p className="mt-4 text-base leading-relaxed text-muted">
+        The honest cost of that: a gallery belongs to one browser. Clearing
+        your site data empties it, and it will not follow you to your phone.
+        Downloading is how you keep a painting for good.
       </p>
 
       <h2 className="mt-14 text-balance font-serif text-2xl text-paper sm:text-3xl">Why it is free</h2>
