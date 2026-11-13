@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Button from "./Button";
+import AuthStatus from "./AuthStatus";
 
 /**
  * Site header: wordmark on the left, navigation on the right.
@@ -36,9 +36,7 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Button href="/login" variant="secondary" size="md">
-            Sign in
-          </Button>
+          <AuthStatus />
         </nav>
       </div>
     </header>
