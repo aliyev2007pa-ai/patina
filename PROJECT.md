@@ -404,11 +404,11 @@ create policy "own_folder_all" on storage.objects
 - [x] `lib/engine/` klasör yapısı, WebGL2 context kurulumu
 - [x] Shader: denoise
 - [x] Shader: **anizotropik Kuwahara** (yapı tensörü + 8 sektör)
-- [ ] Shader: impasto (height → normal → lighting)
-- [ ] Shader: old master tone curve
-- [ ] Shader: kanvas dokusu (prosedürel)
-- [ ] Shader: craquelure (prosedürel noise)
-- [ ] Shader: vinyet + vernik
+- [x] Shader: impasto (height → normal → lighting)
+- [x] Shader: old master tone curve
+- [x] Shader: kanvas dokusu (prosedürel)
+- [x] Shader: craquelure (prosedürel noise)
+- [x] Shader: vinyet + vernik
 - [ ] 5 preset'in parametre tanımları (`lib/engine/presets.ts`)
 - [ ] Kontrol paneli: sliderlar + preset seçici (debounce 150ms)
 - [ ] Hızlı önizleme (1024px) / tam kalite render ayrımı
@@ -436,7 +436,19 @@ create policy "own_folder_all" on storage.objects
 
 **Ölçüm:** 1000×750 önizleme, fırça 8 → ~270 ms. 2048 tam çözünürlük henüz ölçülmedi; PROJECT.md'nin 3 saniye hedefi 3c'de tam kalite render eklenince doğrulanacak.
 
-**Sırada 3b:** impasto, old master tonlama, kanvas dokusu, çatlak, vinyet.
+**3b yapıldı (2026-11-13) — boya, renk ve yüzey:**
+- `shaders/impasto.ts` — fırça darbelerinin parlaklığı yükseklik haritası olarak kullanılıyor; oradan normal, oradan sol üstten gelen ışık. Sol üst keyfi değil: dönemin neredeyse bütün Avrupa resminde ışık oradan gelir, başka yön göze yanlış gelir. Sonuç soft-light ile bindiriliyor — toplama yapsaydık bütün resim açılırdı, soft-light sadece var olanı dikleştiriyor.
+- `shaders/tone.ts` — dört iş birden: doygunluğu toprak boyalara çekmek (dönemin paletinde kadmiyum kırmızı veya ftalo mavi yoktu), açıkları kreme gölgeleri umbere ayırmak, siyahları kaldırmak (vernikli yüzey ışığı saçar; saf siyah bırakmak sahteliğin en belirgin işareti), ve S-eğrisi. Eğriler algısal uzayda uygulanıyor; lineer uzayda S-eğrisi gölgeleri çamura çeviriyor.
+- `shaders/surface.ts` — üç shader bir dosyada: kanvas dokuması, craquelure ve vernik+vinyet. Hepsi shader içinde üretiliyor, hiçbir dosya indirilmiyor.
+- Doku ve çatlakların ölçüsü piksel değil, görselin oranı cinsinden. Bir kanvasta iplik sayısı sabittir; 1024 önizleme ile 2048 render aynı dokuyu göstermeli, yoksa tam kalite render'a basınca resmin karakteri değişir.
+- `components/Toggle.tsx` — çatlaklar için aç/kapa. Varsayılan kapalı: modern bir yüzde çatlak, eskilik değil hasar gibi duruyor.
+- Kontroller üç gruba ayrıldı: **The brush** (intensity, fırça, keskinlik, kontur, denoise), **The paint** (impasto, warmth, contrast, saturation), **The surface** (kanvas, vinyet, çatlak).
+
+**Dokuma deseni iki denemede oturdu.** İlk hali `sin(p·π)` kullanıyordu; bu fonksiyon hücreden hücreye işaret değiştirdiği için iplik değil dama tahtası gibi görünüyor ve göze doku olarak ulaşmıyordu. Her hücrede parabolik bir "iplik sırtı" ve üstte hangi ipliğin olduğunu belirleyen bir dama deseni ile değiştirildi; artık keten dokusu okunuyor.
+
+**Yanlış teşhisten dönüldü:** Yüzdeki yatay şeritlerin kanvas dokusundan geldiğini sandım. Kanvas ve impasto sıfırlanınca şeritler durunca anlaşıldı ki kaynağı Kuwahara'nın kendisi. Yumuşak geçişli bölgelerde eş-parlaklık çizgileri yataya yakındır, darbeler de onları takip ettiği için yatay uzuyor. Yani hata değil, filtrenin doğru çalışması — gerçek bir ressamın yaptığı da budur.
+
+**Sırada 3c:** 5 preset, tam kalite render, PNG/JPEG indirme, altın çerçeve + künye bindirmesi, CPU fallback.
 
 > **Claude Code'a not:** Kuwahara'nın yönlü (anizotropik) versiyonunu kullan, basit kare-blok Kuwahara yetersiz kalır ve "poster filtresi" gibi görünür. Fırça darbeleri görüntünün konturlarını takip etmeli. Bu fazda kaliteden ödün verme — gerekirse bu fazı 3 alt adımda yap ve her birinde bana ekran görüntüsü göster.
 
@@ -566,7 +578,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
-| FAZ 3 — Yağlı boya motoru | 🔄 3a bitti | 2026-11-13 | WebGL2 + denoise + anizotropik Kuwahara + before/after çalışıyor. Sırada impasto ve tonlama. |
+| FAZ 3 — Yağlı boya motoru | 🔄 3a + 3b bitti | 2026-11-13 | 11 geçişli boru hattı çalışıyor: fırça, impasto, tonlama, kanvas, çatlak, vernik. Sırada presetler ve indirme. |
 | FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
 | FAZ 5 — Kaydetme & galeri | ◻ Bekliyor | | |
 | FAZ 6 — Cilalama | ◻ Bekliyor | | |

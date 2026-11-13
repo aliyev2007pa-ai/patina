@@ -7,6 +7,7 @@ import DropZone from "./DropZone";
 import GoldFrame from "./GoldFrame";
 import Plaque from "./Plaque";
 import Slider from "./Slider";
+import Toggle from "./Toggle";
 import { validateImageFile } from "@/lib/image/validate";
 import { decodeImage, DecodeError, type DecodedImage } from "@/lib/image/decode";
 import {
@@ -208,6 +209,9 @@ export default function Studio() {
   const update = (patch: Partial<PaintSettings>) =>
     setSettings((current) => ({ ...current, ...patch }));
 
+  // Every control is dead while the engine is not running.
+  const off = engineError !== null;
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
       <p className="text-[11px] uppercase tracking-[0.3em] text-turquoise">
@@ -278,12 +282,21 @@ export default function Studio() {
               <h2 className="font-serif text-lg text-paper">The brush</h2>
 
               <Slider
+                label="Intensity"
+                value={settings.intensity}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(intensity) => update({ intensity })}
+              />
+              <Slider
                 label="Brush size"
                 value={settings.brushSize}
                 min={2}
                 max={16}
                 suffix=" px"
-                disabled={engineError !== null}
+                disabled={off}
                 onChange={(brushSize) => update({ brushSize })}
               />
               <Slider
@@ -291,7 +304,7 @@ export default function Studio() {
                 value={settings.sharpness}
                 min={1}
                 max={18}
-                disabled={engineError !== null}
+                disabled={off}
                 onChange={(sharpness) => update({ sharpness })}
               />
               <Slider
@@ -300,7 +313,7 @@ export default function Studio() {
                 min={0}
                 max={3}
                 step={0.1}
-                disabled={engineError !== null}
+                disabled={off}
                 onChange={(eccentricity) => update({ eccentricity })}
               />
               <Slider
@@ -309,8 +322,79 @@ export default function Studio() {
                 min={0}
                 max={2}
                 step={0.1}
-                disabled={engineError !== null}
+                disabled={off}
                 onChange={(denoise) => update({ denoise })}
+              />
+            </div>
+
+            <div className="space-y-5 rounded-sm border border-white/10 bg-surface/50 p-5">
+              <h2 className="font-serif text-lg text-paper">The paint</h2>
+
+              <Slider
+                label="Impasto"
+                value={settings.impasto}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(impasto) => update({ impasto })}
+              />
+              <Slider
+                label="Warmth"
+                value={settings.warmth}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(warmth) => update({ warmth })}
+              />
+              <Slider
+                label="Contrast"
+                value={settings.contrast}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(contrast) => update({ contrast })}
+              />
+              <Slider
+                label="Saturation"
+                value={settings.saturation}
+                min={0}
+                max={1.2}
+                step={0.05}
+                disabled={off}
+                onChange={(saturation) => update({ saturation })}
+              />
+            </div>
+
+            <div className="space-y-5 rounded-sm border border-white/10 bg-surface/50 p-5">
+              <h2 className="font-serif text-lg text-paper">The surface</h2>
+
+              <Slider
+                label="Canvas texture"
+                value={settings.canvasTexture}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(canvasTexture) => update({ canvasTexture })}
+              />
+              <Slider
+                label="Vignette"
+                value={settings.vignette}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(vignette) => update({ vignette })}
+              />
+              <Toggle
+                label="Cracks"
+                hint="Two centuries of varnish. Heavy-handed on a modern face."
+                checked={settings.cracks > 0}
+                disabled={off}
+                onChange={(on) => update({ cracks: on ? 0.6 : 0 })}
               />
 
               <button
@@ -318,7 +402,7 @@ export default function Studio() {
                 onClick={() => setSettings(DEFAULT_SETTINGS)}
                 className="text-xs text-muted underline-offset-4 transition-colors duration-200 hover:text-white hover:underline"
               >
-                Reset the brush
+                Reset everything
               </button>
             </div>
 
