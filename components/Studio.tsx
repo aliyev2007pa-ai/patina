@@ -1,21 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BeforeAfter from "./BeforeAfter";
 import Button from "./Button";
 import DropZone from "./DropZone";
 import GoldFrame from "./GoldFrame";
 import Plaque from "./Plaque";
+import PresetPicker from "./PresetPicker";
 import Slider from "./Slider";
 import Toggle from "./Toggle";
 import { validateImageFile } from "@/lib/image/validate";
 import { decodeImage, DecodeError, type DecodedImage } from "@/lib/image/decode";
 import {
-  DEFAULT_SETTINGS,
   GLError,
   OilPaintEngine,
   type PaintSettings,
 } from "@/lib/engine/pipeline";
+import {
+  DEFAULT_PRESET,
+  matchPreset,
+  presetById,
+  type PresetId,
+} from "@/lib/engine/presets";
+import {
+  downloadCanvas,
+  exportName,
+  withFrame,
+  type ExportFormat,
+} from "@/lib/engine/export";
 
 /** Previews run small so a slider drag feels instant (PROJECT.md 3.4). */
 const PREVIEW_EDGE = 1024;
@@ -59,32 +71,45 @@ function scaleCanvas(source: HTMLCanvasElement, edge: number) {
   return canvas;
 }
 
+/** A WebGL canvas is volatile; this takes a plain copy that will keep. */
+function snapshot(source: HTMLCanvasElement) {
+  const canvas = document.createElement("canvas");
+  canvas.width = source.width;
+  canvas.height = source.height;
+  canvas.getContext("2d")?.drawImage(source, 0, 0);
+  return canvas;
+}
+
 export default function Studio() {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
-  const [settings, setSettings] = useState<PaintSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<PaintSettings>(
+    presetById(DEFAULT_PRESET).settings
+  );
   const [paintedUrl, setPaintedUrl] = useState<string | null>(null);
   const [renderMs, setRenderMs] = useState<number | null>(null);
+
+  const [fullUrl, setFullUrl] = useState<string | null>(null);
+  const [fullMs, setFullMs] = useState<number | null>(null);
+  const [rendering, setRendering] = useState(false);
+
+  const [withGoldFrame, setWithGoldFrame] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [engineError, setEngineError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const engineRef = useRef<OilPaintEngine | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const paintedUrlRef = useRef<string | null>(null);
 
-  // Keep the newest URL in a ref so the render effect can revoke the previous
-  // one without listing it as a dependency and re-running itself.
+  const activePreset = useMemo(() => matchPreset(settings), [settings]);
+
   useEffect(() => {
     paintedUrlRef.current = paintedUrl;
   }, [paintedUrl]);
 
-  // The engine is built in the file handler rather than in an effect, because
-  // building it can fail and the failure has to be reported — and setting
-  // state from inside an effect is both a React anti-pattern and a lint
-  // error. Here it is just part of handling a click.
-  //
-  // Which leaves one job for an effect: releasing the last engine when the
-  // page goes away. Browsers allow only a handful of live WebGL contexts, and
-  // the studio makes a new one for every photograph.
+  // Release the last engine when the page goes away. Browsers allow only a
+  // handful of live WebGL contexts and the studio makes one per photograph.
   useEffect(() => {
     return () => {
       engineRef.current?.dispose();
@@ -92,7 +117,7 @@ export default function Studio() {
     };
   }, []);
 
-  // Re-render 150ms after the sliders stop moving (PROJECT.md 3.4).
+  // Re-render 150ms after the controls stop moving (PROJECT.md 3.4).
   useEffect(() => {
     const engine = engineRef.current;
     if (!loaded || !engine) return;
@@ -103,6 +128,7 @@ export default function Studio() {
         const start = performance.now();
         const canvas = engine.render(settings);
         const elapsed = performance.now() - start;
+        previewCanvasRef.current = snapshot(canvas);
 
         const url = await toBlobUrl(canvas);
         if (cancelled) {
@@ -130,6 +156,26 @@ export default function Studio() {
     };
   }, [loaded, settings]);
 
+  /**
+   * A full-size render belongs to the settings that produced it. Moving any
+   * control makes it stale, so it is thrown away rather than left behind to
+   * be downloaded by mistake.
+   *
+   * This is called from the handlers that change the settings rather than
+   * from an effect watching them. An effect would be the obvious place, but
+   * setting state inside one causes a second render pass for every change —
+   * and here the change always starts with someone touching a control, which
+   * is a perfectly good place to do the work.
+   */
+  const clearFullRender = useCallback(() => {
+    fullCanvasRef.current = null;
+    setFullMs(null);
+    setFullUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+  }, []);
+
   const handleFile = useCallback(async (file: File) => {
     setBusy(true);
     setError(null);
@@ -147,6 +193,7 @@ export default function Studio() {
       const preview = scaleCanvas(image.canvas, PREVIEW_EDGE);
       const originalUrl = await toBlobUrl(preview);
 
+      clearFullRender();
       engineRef.current?.dispose();
       try {
         engineRef.current = new OilPaintEngine(
@@ -188,11 +235,96 @@ export default function Studio() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [clearFullRender]);
+
+  /**
+   * Paints the whole photograph, not the preview.
+   *
+   * The brush is measured in pixels, so it has to be scaled up with the
+   * image — otherwise the full render comes back with relatively finer
+   * strokes than the preview promised, which is the sort of surprise that
+   * makes people stop trusting a preview.
+   *
+   * A second engine is built and thrown away rather than resizing the first:
+   * a 2048px pipeline holds five floating-point textures, around 125MB, and
+   * there is no reason to keep that alive while someone drags a slider.
+   */
+  const renderFull = useCallback(async () => {
+    if (!loaded) return;
+    setRendering(true);
+    setEngineError(null);
+
+    // Let the button repaint as "Painting…" before the GPU blocks the thread.
+    await new Promise((resolve) => window.setTimeout(resolve, 30));
+
+    let engine: OilPaintEngine | null = null;
+    try {
+      const full = loaded.image.canvas;
+      const scale =
+        Math.max(full.width, full.height) /
+        Math.max(loaded.previewWidth, loaded.previewHeight);
+
+      engine = new OilPaintEngine(full, full.width, full.height);
+
+      const start = performance.now();
+      const canvas = engine.render({
+        ...settings,
+        brushSize: settings.brushSize * scale,
+      });
+      const elapsed = performance.now() - start;
+
+      const copy = snapshot(canvas);
+      fullCanvasRef.current = copy;
+
+      const url = await toBlobUrl(copy);
+      setFullUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return url;
+      });
+      setFullMs(Math.round(elapsed));
+    } catch (cause) {
+      setEngineError(
+        cause instanceof GLError
+          ? cause.message
+          : "The full-size render ran out of room on this device. The preview still works."
+      );
+    } finally {
+      engine?.dispose();
+      setRendering(false);
+    }
+  }, [loaded, settings]);
+
+  const download = useCallback(
+    async (format: ExportFormat) => {
+      if (!loaded) return;
+      const source = fullCanvasRef.current ?? previewCanvasRef.current;
+      if (!source) return;
+
+      const title = loaded.name.replace(/\.[^.]+$/, "") || "Untitled";
+      const preset = activePreset ? presetById(activePreset).name : "Patina";
+
+      const canvas = withGoldFrame
+        ? withFrame(source, {
+            title,
+            style: preset,
+            date: new Date().getFullYear().toString(),
+          })
+        : source;
+
+      try {
+        await downloadCanvas(canvas, exportName(loaded.name, format), format);
+      } catch {
+        setError("The painting could not be saved. Try the other format.");
+      }
+    },
+    [loaded, withGoldFrame, activePreset]
+  );
 
   const reset = useCallback(() => {
     engineRef.current?.dispose();
     engineRef.current = null;
+    previewCanvasRef.current = null;
+    fullCanvasRef.current = null;
     setLoaded((previous) => {
       if (previous) URL.revokeObjectURL(previous.originalUrl);
       return null;
@@ -201,16 +333,28 @@ export default function Studio() {
       if (previous) URL.revokeObjectURL(previous);
       return null;
     });
+    setFullUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
     setRenderMs(null);
+    setFullMs(null);
     setError(null);
     setEngineError(null);
   }, []);
 
-  const update = (patch: Partial<PaintSettings>) =>
+  const update = (patch: Partial<PaintSettings>) => {
+    clearFullRender();
     setSettings((current) => ({ ...current, ...patch }));
+  };
 
-  // Every control is dead while the engine is not running.
+  const pickPreset = (id: PresetId) => {
+    clearFullRender();
+    setSettings(presetById(id).settings);
+  };
+
   const off = engineError !== null;
+  const canDownload = paintedUrl !== null && !off;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
@@ -248,7 +392,7 @@ export default function Studio() {
               {paintedUrl ? (
                 <BeforeAfter
                   beforeSrc={loaded.originalUrl}
-                  afterSrc={paintedUrl}
+                  afterSrc={fullUrl ?? paintedUrl}
                   width={loaded.previewWidth}
                   height={loaded.previewHeight}
                 />
@@ -263,8 +407,8 @@ export default function Studio() {
             </GoldFrame>
             <Plaque
               title={loaded.name.replace(/\.[^.]+$/, "")}
-              style="Anisotropic Kuwahara"
-              date="Study"
+              style={activePreset ? presetById(activePreset).name : "Adjusted"}
+              date={new Date().getFullYear().toString()}
             />
           </figure>
 
@@ -277,6 +421,60 @@ export default function Studio() {
                 {engineError}
               </p>
             )}
+
+            <div className="space-y-4 rounded-sm border border-white/10 bg-surface/50 p-5">
+              <h2 className="font-serif text-lg text-paper">Take it home</h2>
+
+              <Toggle
+                label="Gold frame and plaque"
+                checked={withGoldFrame}
+                disabled={!canDownload}
+                onChange={setWithGoldFrame}
+              />
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => download("png")}
+                  disabled={!canDownload}
+                  className="flex-1"
+                >
+                  PNG
+                </Button>
+                <Button
+                  onClick={() => download("jpeg")}
+                  disabled={!canDownload}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  JPEG
+                </Button>
+              </div>
+
+              <button
+                type="button"
+                onClick={renderFull}
+                disabled={rendering || off}
+                className="w-full text-xs text-turquoise underline-offset-4 transition-colors duration-200 hover:underline disabled:text-muted disabled:no-underline"
+              >
+                {rendering
+                  ? "Painting at full size…"
+                  : fullUrl
+                    ? `Full size ready · ${loaded.image.width} × ${loaded.image.height}`
+                    : `Render full quality (${loaded.image.width} × ${loaded.image.height})`}
+              </button>
+
+              <p className="text-[11px] leading-relaxed text-muted">
+                {fullUrl
+                  ? "Downloads will use the full-size painting."
+                  : "Downloads use the preview until you render full quality."}
+              </p>
+            </div>
+
+            <PresetPicker
+              active={activePreset}
+              disabled={off}
+              onPick={pickPreset}
+            />
 
             <div className="space-y-5 rounded-sm border border-white/10 bg-surface/50 p-5">
               <h2 className="font-serif text-lg text-paper">The brush</h2>
@@ -418,19 +616,11 @@ export default function Studio() {
               />
               <Toggle
                 label="Cracks"
-                hint="Two centuries of varnish. Heavy-handed on a modern face."
+                hint="Two centuries of varnish. Heavy-handed on anything modern."
                 checked={settings.cracks > 0}
                 disabled={off}
                 onChange={(on) => update({ cracks: on ? 0.6 : 0 })}
               />
-
-              <button
-                type="button"
-                onClick={() => setSettings(DEFAULT_SETTINGS)}
-                className="text-xs text-muted underline-offset-4 transition-colors duration-200 hover:text-white hover:underline"
-              >
-                Reset everything
-              </button>
             </div>
 
             <dl className="space-y-1.5 text-xs text-muted">
@@ -448,16 +638,16 @@ export default function Studio() {
                   {loaded.image.width} &times; {loaded.image.height} px
                 </dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt>Preview</dt>
-                <dd>
-                  {loaded.previewWidth} &times; {loaded.previewHeight} px
-                </dd>
-              </div>
               {renderMs !== null && (
                 <div className="flex justify-between gap-4">
-                  <dt>Painted in</dt>
+                  <dt>Preview painted in</dt>
                   <dd className="text-turquoise">{renderMs} ms</dd>
+                </div>
+              )}
+              {fullMs !== null && (
+                <div className="flex justify-between gap-4">
+                  <dt>Full size painted in</dt>
+                  <dd className="text-turquoise">{fullMs} ms</dd>
                 </div>
               )}
               {loaded.image.orientation !== 1 && (
@@ -475,8 +665,8 @@ export default function Studio() {
             </Button>
 
             <p className="text-xs leading-relaxed text-muted">
-              Drag the divider to compare. This is the brush step only &mdash;
-              thick paint, aged colour, canvas and varnish come next.
+              Drag the divider to compare. Nothing has been uploaded — the
+              painting was made on this device and stays here.
             </p>
           </aside>
         </div>
