@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import GalleryWall from "@/components/GalleryWall";
 
 export const metadata: Metadata = {
-  title: "Gallery — Patina",
+  title: "Gallery",
   description:
     "The paintings you have kept, framed and labelled. Stored in your own browser, never uploaded.",
 };

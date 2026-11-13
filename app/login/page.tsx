@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import AuthForm from "@/components/AuthForm";
 
 export const metadata: Metadata = {
-  title: "Sign in — Patina",
+  title: "Sign in",
   description:
     "Sign in to keep your paintings. Everything else works without an account.",
 };

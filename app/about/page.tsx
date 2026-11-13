@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Button from "@/components/Button";
 
 export const metadata: Metadata = {
-  title: "About — Patina",
+  title: "About",
   description:
     "How Patina repaints a photograph in your browser, why it is free, and why your photo never leaves your device.",
 };

@@ -476,6 +476,23 @@ export default function Studio() {
       </h1>
       <div className="mt-5 h-px w-20 bg-gold" />
 
+      {/* Everything that happens here happens visually: a photograph appears,
+          a painting replaces it, a slider changes what is on screen. None of
+          that reaches anyone using a screen reader, so this one line says it
+          out loud. `polite` rather than `assertive` because it is progress,
+          not an emergency. */}
+      <p aria-live="polite" className="sr-only">
+        {busy
+          ? "Reading your photograph."
+          : rendering
+            ? "Painting at full size."
+            : keeping
+              ? "Keeping the painting."
+              : loaded && paintedUrl
+                ? `${loaded.name} has been painted. Use the comparison slider to see the photograph underneath.`
+                : ""}
+      </p>
+
       {error !== null && (
         <p
           role="alert"
