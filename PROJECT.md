@@ -461,6 +461,22 @@ Bu, o ana kadarki varsayılanların yanlış yönde olduğu anlamına geliyordu:
   2. **Darbeden darbeye ton farkı.** Asıl eksik olan buydu. Kuwahara bölgeleri kusursuz düz bırakıyor; hiçbir ressam düz alan sürmez, her darbe biraz farklı yüklüdür. Düz renk baskının imzasıdır, boyanın değil. Gürültü, akış yönünde gerilmiş bir koordinat sisteminde örnekleniyor, böylece değişim leke değil **darbe biçimli** çıkıyor.
 - Yeni kaydıraç: **Stroke irregularity**. PROJECT.md 3.4'teki listede yok; kalite hedefi için eklendi.
 
+**Son kalite turu (2026-11-13) — Aliyev'in kararıyla:**
+
+Aliyev, ChatGPT'nin ürettiği bir "yağlı boya selfie" gösterdi ve o seviyeyi sordu. Cevap hayırdı ve nedeni kayda değer: o görsel bir filtre çıktısı değil, **yeniden üretim**. Orijinalde sağda duran kombi tabloda yok; aynanın çerçevesi yok; alttaki yeşil fayanslar yok; kompozisyon portreye kırpılmış; saç yeniden çizilmiş. Kombiyi silmek, arkasındaki duvarı **uydurmak** demek — orada hiç piksel yoktu. Filtre var olan pikselleri yeniden boyar; olmayanı uyduramaz, olanı silemez.
+
+Aliyev bunu anlayıp **filtre tavanını kabul etti** ve son bir kalite turu istedi. Üç değişiklik yapıldı; hepsi elle boyanmış hiçbir resimde bulunmayan tek şeyi hedefliyor: **tekdüze darbe.**
+
+1. **Detaya göre değişen fırça.** Yapı tensörünün izi (trace) her pikselde ne kadar şey olup bittiğini söylüyor. Fırça boş alanlarda büyüyor, formun önemli olduğu yerde küçülüyor. Bir resmi okunabilir yapan şey de bu: göz, detayın hayatta kaldığı yere gider — yani ressamın istediği yere.
+
+2. **İkinci, ince geçiş.** Kaba fırçayla bloklanan resmin üstünden, sadece kaba fırçanın bir şey kaybettiği yerlerde ince fırça geçiyor. Nerede kaybettiğini söylemeye gerek yok: kaba katmanı fotoğrafla karşılaştırmak tam olarak onu gösteriyor. Düz duvarlar değişmeden geri geliyor ve gevşek darbelerini koruyor; gözler ve yazılar ince fırçayı alıyor.
+
+3. **Kıl izleri.** Darbe geçişi artık akış yönünde iyice ezilmiş bir koordinat sisteminden kıl furrow'ları yazıyor. Çizgi olarak çizilmiyor, **renge** yazılıyor — çünkü impasto geçişi parlaklığı yükseklik olarak okuyor, yani oraya yazılan furrow bir adım sonra sol üstten aydınlatılmış gerçek kabartı olarak geri geliyor.
+
+**Performans:** Bu üçü önizlemeyi 270 ms'den 843 ms'ye çıkardı — kaydıraç için fazla yavaş. Örnekleme döngüsü fırça boyuyla orantılı adımlanarak düzeltildi: her ikinci pikselin ortalaması da aynı ortalamadır ve sektörlerin yüzlerce oyu vardı. **843 ms → 215 ms**, üstelik tek değil iki fırça geçişiyle.
+
+**Dürüst kalan sınır:** Bütün testler sentetik çizimlerle yapıldı. Gerçek fotoğrafın detay yoğunluğu çok farklı; kaliteyi ancak Aliyev kendi fotoğraflarıyla değerlendirebilir.
+
 **Sırada 3c:** 5 preset, tam kalite render, PNG/JPEG indirme, altın çerçeve + künye bindirmesi, CPU fallback.
 
 > **Claude Code'a not:** Kuwahara'nın yönlü (anizotropik) versiyonunu kullan, basit kare-blok Kuwahara yetersiz kalır ve "poster filtresi" gibi görünür. Fırça darbeleri görüntünün konturlarını takip etmeli. Bu fazda kaliteden ödün verme — gerekirse bu fazı 3 alt adımda yap ve her birinde bana ekran görüntüsü göster.

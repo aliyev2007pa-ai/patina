@@ -38,6 +38,7 @@ uniform vec2 uTexel;
 uniform float uRadius;     // brush size, in pixels
 uniform float uSharpness;  // q — how decisively the calmest sector wins
 uniform float uEccentricity; // how much the ellipse stretches along the flow
+uniform float uDetailAdapt;  // how much the brush changes size with detail
 
 const int SECTORS = 8;
 const float PI = 3.14159265359;
@@ -70,10 +71,21 @@ void main() {
   float sum = lambda1 + lambda2;
   float anisotropy = sum > 1e-10 ? (lambda1 - lambda2) / sum : 0.0;
 
+  // A painter does not use one brush for the whole canvas. Broad, loose
+  // strokes go into the empty areas; the brush gets smaller and the hand
+  // slower where the form matters. The trace of the tensor says how much is
+  // going on at this pixel, so it can pick the brush.
+  //
+  // This is also what makes a painting readable: the eye is drawn to wherever
+  // the detail survived, which is exactly where the painter wanted it.
+  float energy = e + g;
+  float detail = 1.0 - exp(-energy * 90.0);
+  float sized = uRadius * mix(1.0, mix(1.45, 0.4, detail), uDetailAdapt);
+
   // Stretch along the flow, squeeze across it, keeping the area similar.
   float stretch = 1.0 + uEccentricity * anisotropy;
-  float major = max(uRadius * stretch, 1.0);
-  float minor = max(uRadius / stretch, 1.0);
+  float major = max(sized * stretch, 1.0);
+  float minor = max(sized / stretch, 1.0);
 
   // Bounding box of the rotated ellipse, so the loop reads no more than it must.
   vec2 extent = vec2(
@@ -82,6 +94,13 @@ void main() {
   );
   int spanX = int(min(ceil(extent.x), 24.0));
   int spanY = int(min(ceil(extent.y), 24.0));
+
+  // Reading every pixel under a large brush is wasted work. The whole point
+  // of the pass is to average them, and an average over every second pixel
+  // is the same average — the sectors just get half as many votes each, and
+  // there were hundreds. Stepping keeps the cost of a 16px brush close to
+  // that of a 6px one, which is what makes the big loose strokes affordable.
+  int step = int(max(1.0, floor(max(major, minor) / 6.0)));
 
   vec3 mean[SECTORS];
   vec3 meanSquare[SECTORS];
@@ -93,8 +112,8 @@ void main() {
     weightSum[k] = 0.0;
   }
 
-  for (int j = -spanY; j <= spanY; ++j) {
-    for (int i = -spanX; i <= spanX; ++i) {
+  for (int j = -spanY; j <= spanY; j += step) {
+    for (int i = -spanX; i <= spanX; i += step) {
       vec2 offset = vec2(float(i), float(j));
 
       // Into the ellipse's own frame, where it is a unit circle.
