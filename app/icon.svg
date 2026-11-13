@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- A framed painting, drawn as shapes rather than a letter: at 16 pixels
+       a glyph turns to mush, while a gold rectangle around a warm field is
+       still recognisable. -->
+  <rect width="32" height="32" rx="4" fill="#0b0b0c"/>
+  <rect x="5" y="4" width="22" height="24" rx="1" fill="#c9a227"/>
+  <rect x="7.5" y="6.5" width="17" height="19" rx="0.5" fill="#2b1d12"/>
+  <!-- The painting inside: a warm sky, a dark horizon, a pale sitter. -->
+  <path d="M7.5 7h17v10.5h-17z" fill="#8c6a1a" opacity="0.55"/>
+  <circle cx="16" cy="14" r="4" fill="#f7f3ea" opacity="0.92"/>
+  <path d="M8.8 25.5c1.2-4.2 3.8-6.3 7.2-6.3s6 2.1 7.2 6.3z" fill="#9a968e" opacity="0.8"/>
+</svg>

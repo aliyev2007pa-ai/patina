@@ -69,6 +69,10 @@ export default function GalleryWall() {
   // Thumbnail URLs are revoked by id, from whichever handler removed them.
   const urls = useRef(new Map<string, string>());
 
+  const dialog = useRef<HTMLDivElement | null>(null);
+  /** Whatever was focused when the viewer opened, so it can be given back. */
+  const opener = useRef<HTMLElement | null>(null);
+
   const release = useCallback((id: string) => {
     const url = urls.current.get(id);
     if (url) {
@@ -124,6 +128,7 @@ export default function GalleryWall() {
 
   // Opening a painting fetches the full-size image it was keeping back.
   const openPainting = useCallback(async (meta: PaintingMeta) => {
+    opener.current = document.activeElement as HTMLElement | null;
     setOpen(meta);
     setConfirming(null);
     setError(null);
@@ -145,14 +150,52 @@ export default function GalleryWall() {
       if (previous) URL.revokeObjectURL(previous);
       return null;
     });
+    // Put the keyboard back where it was. Without this it returns to the top
+    // of the document, and anyone navigating by keyboard has to walk the
+    // whole wall again to reach the painting they just looked at.
+    opener.current?.focus();
+    opener.current = null;
   }, []);
 
-  // Escape closes the viewer, the way every other overlay on the web does.
+  /**
+   * The viewer's keyboard behaviour: Escape closes it, and Tab stays inside.
+   *
+   * A dialog that does not hold focus is only a dialog to people using a
+   * mouse. For everyone else it is a picture that appeared while the keyboard
+   * carried on walking through the page behind it, which is worse than no
+   * dialog at all.
+   */
   useEffect(() => {
     if (!open) return;
+
+    const box = dialog.current;
+    box?.focus();
+
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
+      if (event.key !== "Tab" || !box) return;
+
+      const focusable = box.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const here = document.activeElement;
+
+      if (event.shiftKey && (here === first || here === box)) {
+        last.focus();
+        event.preventDefault();
+      } else if (!event.shiftKey && here === last) {
+        first.focus();
+        event.preventDefault();
+      }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
@@ -353,11 +396,13 @@ export default function GalleryWall() {
 
       {open && (
         <div
+          ref={dialog}
           role="dialog"
           aria-modal="true"
           aria-label={open.title}
+          tabIndex={-1}
           onClick={close}
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-ink/95 p-4 sm:p-8"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-ink/95 p-4 outline-none sm:p-8"
         >
           <div
             onClick={(event) => event.stopPropagation()}

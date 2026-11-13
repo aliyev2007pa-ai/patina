@@ -47,7 +47,10 @@ export default function Slider({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2 h-1 w-full cursor-pointer appearance-none rounded-full bg-surface-2 accent-turquoise"
+        // Sizing and the thumb live in globals.css: a 4px track needs real
+        // pseudo-element rules, and a 4px-tall element is an unhittable
+        // target on a phone.
+        className="mt-1 w-full"
       />
     </div>
   );
