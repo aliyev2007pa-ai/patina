@@ -398,7 +398,7 @@ create policy "own_folder_all" on storage.objects
 
 ---
 
-### ◻ FAZ 3 — YAĞLI BOYA MOTORU ⭐ (En önemli faz)
+### ✅ FAZ 3 — YAĞLI BOYA MOTORU ⭐ (En önemli faz)
 **Amaç:** Bölüm 3'teki pipeline'ı çalıştırmak. Bu faz bitince **site aslında bitmiş** sayılır — backend olmadan tam kullanılabilir.
 
 - [x] `lib/engine/` klasör yapısı, WebGL2 context kurulumu
@@ -409,14 +409,14 @@ create policy "own_folder_all" on storage.objects
 - [x] Shader: kanvas dokusu (prosedürel)
 - [x] Shader: craquelure (prosedürel noise)
 - [x] Shader: vinyet + vernik
-- [ ] 5 preset'in parametre tanımları (`lib/engine/presets.ts`)
-- [ ] Kontrol paneli: sliderlar + preset seçici (debounce 150ms)
-- [ ] Hızlı önizleme (1024px) / tam kalite render ayrımı
+- [x] 5 preset'in parametre tanımları (`lib/engine/presets.ts`)
+- [x] Kontrol paneli: sliderlar + preset seçici (debounce 150ms)
+- [x] Hızlı önizleme (1024px) / tam kalite render ayrımı
 - [x] Before/After sürgülü karşılaştırma
-- [ ] Altın çerçeve + künye bindirmesi (opsiyonel, export'a dahil)
-- [ ] PNG / JPEG indirme
-- [ ] Web Worker CPU fallback (WebGL2 yoksa)
-- [ ] Commit + push
+- [x] Altın çerçeve + künye bindirmesi (opsiyonel, export'a dahil)
+- [x] PNG / JPEG indirme
+- [x] Web Worker CPU fallback (WebGL2 yoksa)
+- [x] Commit + push
 
 **Kabul kriteri:** Bir portre fotoğrafı yüklendiğinde "Ottoman Court" preset'i ile çıkan sonuç, filtre uygulanmış fotoğraf gibi değil **boyanmış tablo** gibi görünüyor. 2048px render masaüstünde 3 saniyenin altında bitiyor.
 
@@ -477,7 +477,23 @@ Aliyev bunu anlayıp **filtre tavanını kabul etti** ve son bir kalite turu ist
 
 **Dürüst kalan sınır:** Bütün testler sentetik çizimlerle yapıldı. Gerçek fotoğrafın detay yoğunluğu çok farklı; kaliteyi ancak Aliyev kendi fotoğraflarıyla değerlendirebilir.
 
-**Sırada 3c:** 5 preset, tam kalite render, PNG/JPEG indirme, altın çerçeve + künye bindirmesi, CPU fallback.
+**3c yapıldı (2026-11-13) — FAZ 3 tamamlandı:**
+- `lib/engine/presets.ts` — **6 preset**, PROJECT.md'deki 5'e ek olarak `natural`. **Sapma:** PROJECT.md varsayılanı Ottoman Court diyor, varsayılan `natural` oldu. Sebebi Aliyev'in sonradan ve açıkça söylediği şey: fotoğraf kendi renklerini korusun, kırmızı kıyafet kırmızı kalsın. Ottoman Court bir tık uzakta duruyor; istenirse varsayılan geri alınır.
+- `components/PresetPicker.tsx` — gerçek radio düğmeleriyle, ok tuşlarıyla gezilebiliyor. Bir kaydıraca dokunulunca hiçbir preset seçili görünmüyor; ekrandakiyle ilgili yalan söylememek için.
+- **Tam kalite render** — ikinci bir motor kurulup atılıyor. 2048'lik boru hattı beş adet kayan noktalı doku tutuyor (~125 MB) ve biri kaydıraç sürüklerken bunun bellekte durmasının anlamı yok. Fırça piksel cinsinden ölçüldüğü için görselle birlikte ölçekleniyor; yoksa tam render, önizlemenin vaat ettiğinden ince darbelerle geliyor.
+- Tam render, onu üreten ayarlara ait. Herhangi bir kontrole dokunulunca atılıyor — yanlışlıkla indirilmesin diye.
+- `lib/engine/export.ts` — altın çerçeve ve künye 2B canvas'a çiziliyor, ölçüler tablonun uzun kenarının oranı cinsinden. Böylece önizleme ile 2048 render aynı görünüyor; biri kıl gibi çerçeve, öteki kalas almıyor.
+- `lib/engine/cpu.worker.ts` + `cpuEngine.ts` — WebGL2 olmayan cihazlar için uyumluluk modu. Worker'da çalışıyor, çünkü yavaş: ana iş parçacığında birkaç saniyelik render sayfayı dondurur ve telefonda tarayıcı sekmeyi askıda sayabilir. Lineer renk uzayı, denoise, akışı takip eden Kuwahara, tonlama, dokuma ve vinyet korunuyor; ikinci ince geçiş, kıl izleri ve impasto kabartısı atılıyor — üçü de piksel başına maliyeti katlıyor ve yavaş bir cihazın ilk ihtiyacı bitirmek.
+
+**Kabul kriteri ölçümleri:**
+| Ne | Sonuç |
+|---|---|
+| 1638 × 2048 tam render | **462 ms** (hedef: 3 sn altı) |
+| 1024 px önizleme | 123–215 ms |
+| CPU modu, 448 × 560 | 2150 ms |
+| İndirilen dosya | `buyuk-patina.png`, 1994 × 2670 (çerçeve + künye dahil) |
+
+**Not:** Kalite değerlendirmesi Aliyev'e ait. Referans olarak bir üretken yapay zekâ çıktısı gösterdi; o seviyenin filtreyle ulaşılamaz olduğu konuşuldu (bkz. yukarıdaki not) ve Aliyev filtre tavanını kabul ederek "bu kalite iyi" dedi.
 
 > **Claude Code'a not:** Kuwahara'nın yönlü (anizotropik) versiyonunu kullan, basit kare-blok Kuwahara yetersiz kalır ve "poster filtresi" gibi görünür. Fırça darbeleri görüntünün konturlarını takip etmeli. Bu fazda kaliteden ödün verme — gerekirse bu fazı 3 alt adımda yap ve her birinde bana ekran görüntüsü göster.
 
@@ -607,7 +623,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
-| FAZ 3 — Yağlı boya motoru | 🔄 3a + 3b bitti | 2026-11-13 | 11 geçişli boru hattı çalışıyor: fırça, impasto, tonlama, kanvas, çatlak, vernik. Sırada presetler ve indirme. |
+| FAZ 3 — Yağlı boya motoru | ✅ Bitti | 2026-11-13 | 13 geçişli WebGL2 boru hattı, 6 preset, tam kalite render (2048 → 462 ms), PNG/JPEG indirme, çerçeve + künye, CPU yedeği. |
 | FAZ 4 — Supabase & Auth | ◻ Bekliyor | | |
 | FAZ 5 — Kaydetme & galeri | ◻ Bekliyor | | |
 | FAZ 6 — Cilalama | ◻ Bekliyor | | |
