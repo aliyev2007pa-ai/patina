@@ -448,6 +448,19 @@ create policy "own_folder_all" on storage.objects
 
 **Yanlış teşhisten dönüldü:** Yüzdeki yatay şeritlerin kanvas dokusundan geldiğini sandım. Kanvas ve impasto sıfırlanınca şeritler durunca anlaşıldı ki kaynağı Kuwahara'nın kendisi. Yumuşak geçişli bölgelerde eş-parlaklık çizgileri yataya yakındır, darbeler de onları takip ettiği için yatay uzuyor. Yani hata değil, filtrenin doğru çalışması — gerçek bir ressamın yaptığı da budur.
 
+**Yön düzeltmesi (2026-11-13) — Aliyev'in geri bildirimi:**
+
+Aliyev referans olarak Zonaro'nun *Fatih'in İstanbul'a Girişi* tablosunu gösterdi, ama asıl istediğini şöyle netleştirdi: **paletin kopyalanmasını değil, boyanmışlık hissini istiyor.** Bir evin fotoğrafı yüklendiğinde ev aynı renkte kalmalı, sadece elle boyanmış gibi görünmeli. Kırmızı bir kıyafet kırmızı kalmalı.
+
+Bu, o ana kadarki varsayılanların yanlış yönde olduğu anlamına geliyordu: sıcak tonlama fazla açıktı ve her fotoğrafa sepya bir karakter dayatıyordu.
+
+**Yapılan değişiklikler:**
+- Varsayılanlar "renge sadık" hale getirildi: `warmth` 0.7 → 0.2, `contrast` 0.45 → 0.25, `saturation` 0.85 → 1.0, `vignette` 0.5 → 0.3. Eski usta paleti artık dayatma değil, Warmth kaydıracında ve presetlerde bir **seçenek**.
+- `shaders/stroke.ts` eklendi (boru hattında 6. adım). İki iş yapıyor:
+  1. **Düzensiz darbe kenarları.** Kuwahara'nın kenarları makine düzgünlüğünde ve göz bunu "filtrelenmiş fotoğraf" diye okuyor. Yüklü bir fırça temiz kenar bırakmaz. Her piksel okunmadan önce akış yönünde gürültülü bir miktar kaydırılıyor — rastgele yönde değil akış boyunca, çünkü rastgele itiş bulandırır, akış boyunca çekiş fırçanın yaptığı gibi uzatır.
+  2. **Darbeden darbeye ton farkı.** Asıl eksik olan buydu. Kuwahara bölgeleri kusursuz düz bırakıyor; hiçbir ressam düz alan sürmez, her darbe biraz farklı yüklüdür. Düz renk baskının imzasıdır, boyanın değil. Gürültü, akış yönünde gerilmiş bir koordinat sisteminde örnekleniyor, böylece değişim leke değil **darbe biçimli** çıkıyor.
+- Yeni kaydıraç: **Stroke irregularity**. PROJECT.md 3.4'teki listede yok; kalite hedefi için eklendi.
+
 **Sırada 3c:** 5 preset, tam kalite render, PNG/JPEG indirme, altın çerçeve + künye bindirmesi, CPU fallback.
 
 > **Claude Code'a not:** Kuwahara'nın yönlü (anizotropik) versiyonunu kullan, basit kare-blok Kuwahara yetersiz kalır ve "poster filtresi" gibi görünür. Fırça darbeleri görüntünün konturlarını takip etmeli. Bu fazda kaliteden ödün verme — gerekirse bu fazı 3 alt adımda yap ve her birinde bana ekran görüntüsü göster.

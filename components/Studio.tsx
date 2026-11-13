@@ -317,6 +317,15 @@ export default function Studio() {
                 onChange={(eccentricity) => update({ eccentricity })}
               />
               <Slider
+                label="Stroke irregularity"
+                value={settings.strokeJitter}
+                min={0}
+                max={1}
+                step={0.05}
+                disabled={off}
+                onChange={(strokeJitter) => update({ strokeJitter })}
+              />
+              <Slider
                 label="Denoise"
                 value={settings.denoise}
                 min={0}
