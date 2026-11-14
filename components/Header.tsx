@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthStatus from "./AuthStatus";
+import Mark from "./Mark";
 
 /**
  * Site header: wordmark on the left, navigation on the right.
@@ -19,11 +20,16 @@ export default function Header() {
   return (
     <header className="border-b border-white/10">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-4 py-4 sm:flex-row sm:justify-between sm:gap-6 sm:px-6">
+        {/* Mark and wordmark as one lockup. The gap is tight on purpose —
+            any wider and they read as two separate things sitting near each
+            other rather than one logo. */}
         <Link
           href="/"
-          className="font-serif text-2xl tracking-[0.18em] text-paper transition-colors duration-200 hover:text-white"
+          aria-label="Patina, home"
+          className="flex items-center gap-2.5 text-paper transition-colors duration-200 hover:text-white"
         >
-          PATINA
+          <Mark size={26} />
+          <span className="font-serif text-2xl tracking-[0.18em]">PATINA</span>
         </Link>
 
         <nav className="flex items-center gap-4 sm:gap-6">

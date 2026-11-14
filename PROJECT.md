@@ -743,6 +743,21 @@ Aliyev bir fotoğraf verdi — Galata Kulesi'ne bakan, alacakaranlıkta ıslak a
 
 **Telif notu:** Fotoğrafın Aliyev'e ait olup olmadığı doğrulanmadı. Başkasının eseriyse herkese açık bir sitenin vitrininde durması sorun olabilir; Aliyev'e söylendi, karar onun.
 
+### 8.3 Logo (2026-11-14)
+
+Beş yön çizildi ve hepsi **64, 32 ve 16 pikselde** yan yana konuldu — bir markaya 16 pikselde karar verilir, 64'te değil. Aliyev **vernik çizgisini** seçti.
+
+**Mark:** bir daire, tam ortadan ikiye bölünmüş; sol yarı temiz, sağ yarı yaşlanmış; dikiş altın, çevresi altın halka.
+
+**Neden bu:**
+- **16 pikselde ayakta kalan tek seçenek.** Çerçeve içindeki resim o boyutta lapaya dönüşüyor, açık yarı / koyu yarı dönüşmüyor.
+- Sitenin ne *olduğunu* değil **ne yaptığını** anlatıyor: aynı şey, yarısı eskitilmiş. Ana sayfadaki bölünmüş fotoğrafın minyatürü. Logo ile ürün aynı cümleyi kuruyor.
+- Beyaz zeminde de çalışıyor — bir logonun gerçek sınavı bu, çünkü bir gün beyaz bir sayfaya düşer.
+
+**Elenenler ve sebepleri:** çerçeve (genel "kişi/resim" ikonuna benziyor), fırça darbesi (16'da kayboluyor, ayrıca her boya uygulamasının logosu), yaldızlı köşe (16'da "kırp" ikonu gibi okunuyor), çerçevedeki P harfi (**çizim tutmadı** — P okunmuyordu; fikir iyiydi, uygulama başarısız).
+
+**Nereye kondu:** `components/Mark.tsx` (header kilidi), `app/icon.svg` (favicon), `app/opengraph-image.tsx` (sosyal kart). OG kartındaki mark SVG değil kutulardan kurulu — Satori SVG'nin bir alt kümesini işliyor ve bunun her seferinde doğru çıkması gerekiyor.
+
 ### ~~8.1 İki açık uç~~ (2026-11-14 — **kapandı, bkz. 8.2**)
 
 **1. Landing sayfasındaki örnek hâlâ sahte.** `components/SampleArtwork.tsx` elle çizilmiş bir SVG ve kendi yorumunda şöyle yazıyor: *"FAZ 3 replaces it with two real photographs once the engine can actually produce the right-hand side."* FAZ 3 bunu yapmadı. Yani fotoğraf boyayan bir sitenin ana sayfası, motorun gerçek çıktısını göstermiyor — elle çizilmiş bir taklidini gösteriyor.

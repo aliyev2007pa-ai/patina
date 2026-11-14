@@ -54,6 +54,40 @@ export default function Image() {
               borderRadius: "1px",
             }}
           >
+            {/* The mark, built from boxes rather than an SVG: Satori renders
+                a subset of SVG and this needs to be right every time. Two
+                half-pills meeting at a gilt seam, inside a gold ring. */}
+            <div
+              style={{
+                display: "flex",
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                border: "2px solid #c9a227",
+                marginBottom: 26,
+              }}
+            >
+              <div
+                style={{
+                  width: 33,
+                  height: 68,
+                  background: "#efe9dc",
+                  borderTopLeftRadius: 34,
+                  borderBottomLeftRadius: 34,
+                }}
+              />
+              <div style={{ width: 2, height: 68, background: "#c9a227" }} />
+              <div
+                style={{
+                  width: 33,
+                  height: 68,
+                  background: "#a9761f",
+                  borderTopRightRadius: 34,
+                  borderBottomRightRadius: 34,
+                }}
+              />
+            </div>
+
             <div
               style={{
                 fontSize: 20,
