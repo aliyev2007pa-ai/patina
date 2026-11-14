@@ -600,6 +600,30 @@ Kod tarafı bitti (commit `44eb413`). Supabase projesi **açılmadı** — gerek
 
 ---
 
+## 7.2 TARAYICI DOĞRULAMA DURUMU (2026-11-14)
+
+FAZ 6 ve 7'deki her test **Chromium'da** yapıldı. Aşağıdakiler kapatıldı:
+
+| Test | Sonuç |
+|---|---|
+| 12 MP gerçek kamera fotoğrafı (4000×3000) | ✅ 2048'e küçültüldü, `Orientation=6` düzeltildi (1536×2048), tam render 496 ms |
+| **GPS + Make + Model EXIF sızıntısı** | ✅ Hiçbiri kayıtlı görselde yok; APP1 bloğu yerine tarayıcının JFIF başlığı |
+| İlk render yavaşlığı | ✅ Açıklandı: 1292 ms ilk, sonra 276–523 ms. Fark shader derlemesi, sekme başına bir kez |
+| **Depo kapalı tarayıcı** (gizli sekme) | ✅ Galeri çökmüyor, dürüst mesaj; studio boyuyor; "Keep" kapalı, **indirme açık**; 0 konsol hatası |
+| Kod API denetimi | ✅ `createImageBitmap`, `crypto.randomUUID`, `navigator.storage.estimate` — üçünün de yedeği var. WebGL2/float yoksa `GLError` → CPU modu |
+
+**Tarayıcı tabanı (ölçüldü):** derlenmiş CSS `color-mix()` (50×), `@property` (55×), `oklab` (26×) kullanıyor — Tailwind 4'ün çıktısı. Yani **Safari 16.4+ / Chrome 111+ / Firefox 128+**. Daha eskisinde renkler bozulur, site çökmez.
+
+### ⚠ Kapatılamayan: Firefox ve Safari
+
+Playwright ile gerçek Firefox ve WebKit indirilmeye çalışıldı, **iki denemede de 44 MB'ta açılırken takıldı.** Muhtemel sebep bu makinedeki **Windows Application Control** — FAZ 0'da `@next/swc-win32-x64-msvc`'yi de aynı şey engellemiş, Turbopack yerine webpack'e geçmek zorunda kalmıştık. Yarım kalan indirme silindi, makinede iz bırakılmadı.
+
+**Bu yüzden Firefox ve Safari elle doğrulanacak.** Aliyev'in iOS cihazı yok, dolayısıyla **Safari hiç test edilemiyor** — bu kabul edilmiş bir boşluk.
+
+**Safari'de en kötü ihtimal ne?** Çökme değil: her başarısızlık yolu zaten ele alınmış. WebGL2 veya float texture yoksa CPU moduna düşer (yavaş ama çalışır); depo kapalıysa galeri kapanır, boyama ve indirme sürer; CSS eski bir sürümdeyse renkler bozulur. **Hiçbir yolda beyaz ekran yok.**
+
+---
+
 ## 7.1 GÜVENLİK DENETİM RAPORU (2026-11-13)
 
 Her madde **nasıl doğrulandığıyla** birlikte. "Baktım, iyi görünüyor" bir doğrulama değil; aşağıdakilerin çoğu tarayıcıda çalıştırılmış bir testtir.
