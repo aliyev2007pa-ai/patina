@@ -696,12 +696,22 @@ Kapsamı bilerek dar: düz bir `"minimatch": "^11"` override'ı, ağacın başka
 
 ---
 
-### ◻ FAZ 8 — Yayın ve opsiyoneller
-- [ ] `README.md`: ekran görüntüleri, nasıl çalışır, kurulum adımları, teknoloji listesi (portföy için önemli)
-- [ ] Vercel production domain'i düzenle (`patina-art.vercel.app` gibi)
-- [ ] Opsiyonel: GitHub Actions ile haftalık Supabase ping (uyku koruması)
-- [ ] Opsiyonel: public galeri (başkalarının paylaştığı tablolar) — **ayrıca konuşulacak**
-- [ ] Opsiyonel: ücretsiz özel alan adı varsa bağla
+### ◑ FAZ 8 — Yayın ve opsiyoneller
+- [x] `README.md`: ekran görüntüleri, nasıl çalışır, kurulum adımları, teknoloji listesi
+- [ ] Vercel production domain'i düzenle (`patina-art.vercel.app` gibi) — **Aliyev yapacak**, MCP takım yetkisi engellendi
+- [x] ~~GitHub Actions ile haftalık Supabase ping~~ — **konusuz**, Supabase yok (2.3)
+- [ ] ~~Public galeri~~ — mimariye aykırı: galeri tarayıcıda, paylaşılacak sunucu yok. Yapılmak istenirse 2.3 kararının geri alınması gerekir
+- [ ] ~~Ücretsiz özel alan adı~~ — yok, 0 ₺ kuralı
+
+**README (2026-11-14):** `create-next-app` şablonu silinip baştan yazıldı. Üç ekran görüntüsü `docs/` altında (public/ değil — repoda durur, siteyle beraber sunulmaz). İçerik: 13 geçişlik boru hattı tablosu, "okumaya değer kararlar" bölümü (çift açı özvektör, `readPixels` zamanlama hatası, EXIF probe, IndexedDB kararı, 4 px slider), gizlilik/güvenlik özeti, yerel kurulum, dosya düzeni, ve **ne yapamadığı**.
+
+### 8.1 İki açık uç (2026-11-14)
+
+**1. Landing sayfasındaki örnek hâlâ sahte.** `components/SampleArtwork.tsx` elle çizilmiş bir SVG ve kendi yorumunda şöyle yazıyor: *"FAZ 3 replaces it with two real photographs once the engine can actually produce the right-hand side."* FAZ 3 bunu yapmadı. Yani fotoğraf boyayan bir sitenin ana sayfası, motorun gerçek çıktısını göstermiyor — elle çizilmiş bir taklidini gösteriyor.
+
+**2. README görselleri sentetik.** Ekran görüntülerindeki yüz canvas ile çizilmiş; arayüz gerçek ama konu çizgi film gibi. Portföy için zayıf.
+
+**İkisinin de çözümü aynı ve tek bir şeye bağlı: gerçek bir fotoğraf.** Yüz olmak zorunda değil — manzara, sokak, kedi, herhangi bir şey. O geldiğinde motorla gerçek bir "önce/sonra" üretilip hem landing'e hem README'ye konulabilir.
 
 ---
 
@@ -764,7 +774,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 5 — Kaydetme & galeri | ✅ Bitti | 2026-11-13 | Galeri Supabase yerine tarayıcıda (IndexedDB). 1600px/0.82 + 400px thumbnail + 20 sınırı korundu. Kaydet/aç/indir/sil tarayıcıda test edildi. |
 | FAZ 6 — Cilalama | ✅ Bitti | 2026-11-13 | Hata sınırları + 404, SEO (sitemap/robots/OG/icon/canonical), slider dokunma hedefi 4→24 px, skip link + focus tuzağı + aria-live. Lighthouse masaüstü 98-100, mobil 90; a11y her sayfada 100. |
 | FAZ 7 — Güvenlik denetimi | ✅ Bitti | 2026-11-13 | 9 maddenin tamamı ✅, rapor 7.1'de. Güvenlik başlıkları + CSP eklendi ve production build'de ölçüldü. EXIF silinmesi kanarya testiyle kanıtlandı. Üçüncü parti istek sayısı 0. npm audit 7 → 0. |
-| FAZ 8 — Yayın | ◻ Bekliyor | | |
+| FAZ 8 — Yayın | ◑ README bitti | 2026-11-14 | README baştan yazıldı + 3 ekran görüntüsü. Kalan: Vercel'de domain adını düzeltmek (Aliyev) ve landing/README için gerçek bir fotoğraf (8.1). |
 
 ---
 
