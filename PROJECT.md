@@ -708,6 +708,24 @@ Kapsamı bilerek dar: düz bir `"minimatch": "^11"` override'ı, ağacın başka
 
 **README (2026-11-14):** `create-next-app` şablonu silinip baştan yazıldı. Üç ekran görüntüsü `docs/` altında (public/ değil — repoda durur, siteyle beraber sunulmaz). İçerik: 13 geçişlik boru hattı tablosu, "okumaya değer kararlar" bölümü (çift açı özvektör, `readPixels` zamanlama hatası, EXIF probe, IndexedDB kararı, 4 px slider), gizlilik/güvenlik özeti, yerel kurulum, dosya düzeni, ve **ne yapamadığı**.
 
+### 8.0 Yeni adreste son doğrulama (2026-11-14)
+
+Domain değiştikten sonra her şey baştan sınandı — eski adreste çalışıyor olması yenisinde çalıştığının kanıtı değil.
+
+| Kontrol | Sonuç |
+|---|---|
+| 4 sayfa + sitemap + robots | ✅ hepsi 200, hepsi yeni adresi yazıyor |
+| Canonical ve OpenGraph görseli | ✅ `https://patina-art.vercel.app/...` |
+| 6 güvenlik başlığı | ✅ 6/6 |
+| Boyama | ✅ önizleme 434 ms, tam boy 386 ms, uyumluluk moduna düşmedi |
+| Kaydetme → galeri | ✅ künye *"final-check · NATURAL · 2026"*, sayaç `1 of 20 kept · 105 KB` |
+| İndirme | ✅ `final-check-patina.jpg`, 269 KB — gerçek dosya indi |
+| Görüntüleyici + silme | ✅ açıldı, Escape kapattı, silince boş duruma döndü |
+| Konsol hatası | ✅ 0 |
+| **Lighthouse (masaüstü)** | **`/` 100·100·100·100 · `/studio` 100·100·100·100 · `/about` 100·100·100·100** |
+
+Eski adres (`patina-steel-nine.vercel.app`) artık 404 — domain listesinden kaldırıldı.
+
 ### 8.1 İki açık uç (2026-11-14)
 
 **1. Landing sayfasındaki örnek hâlâ sahte.** `components/SampleArtwork.tsx` elle çizilmiş bir SVG ve kendi yorumunda şöyle yazıyor: *"FAZ 3 replaces it with two real photographs once the engine can actually produce the right-hand side."* FAZ 3 bunu yapmadı. Yani fotoğraf boyayan bir sitenin ana sayfası, motorun gerçek çıktısını göstermiyor — elle çizilmiş bir taklidini gösteriyor.
@@ -778,6 +796,25 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 6 — Cilalama | ✅ Bitti | 2026-11-13 | Hata sınırları + 404, SEO (sitemap/robots/OG/icon/canonical), slider dokunma hedefi 4→24 px, skip link + focus tuzağı + aria-live. Lighthouse masaüstü 98-100, mobil 90; a11y her sayfada 100. |
 | FAZ 7 — Güvenlik denetimi | ✅ Bitti | 2026-11-13 | 9 maddenin tamamı ✅, rapor 7.1'de. Güvenlik başlıkları + CSP eklendi ve production build'de ölçüldü. EXIF silinmesi kanarya testiyle kanıtlandı. Üçüncü parti istek sayısı 0. npm audit 7 → 0. |
 | FAZ 8 — Yayın | ✅ Bitti | 2026-11-14 | README baştan yazıldı + 3 ekran görüntüsü. Adres `patina-art.vercel.app` oldu. Açık kalan tek şey kod değil: landing ve README için gerçek bir fotoğraf (8.1). |
+
+## 🏛 PROJE TAMAMLANDI — 2026-11-14
+
+**Dokuz fazın dokuzu da kapandı.** Site canlı: **https://patina-art.vercel.app**
+
+Altı gün (9–14 Kasım 2026). Maliyet: **0 ₺**, ve bu bir hedef değil artık bir özellik — ücretli bir servise bağlanacak yer kalmadı.
+
+**Rakamlarla:**
+- 13 geçişlik WebGL2 boru hattı, 6 preset, 15 ayar
+- Her sayfa statik, Lighthouse masaüstünde 100·100·100·100
+- Erişilebilirlik her sayfada 100, 320 px'de taşma yok
+- 9 güvenlik kuralının 9'u ✅, `npm audit` 0
+- Fotoğraf cihazdan **hiç çıkmıyor** — istisnasız, ölçülmüş: canlı sayfada üçüncü parti origin sayısı 0
+
+**Yoldan dönülen iki karar, ki projenin asıl öğrettiği şey bunlar:**
+1. **Üretken yapay zeka olmadan ne kadar ileri gidilebileceğinin tavanı ölçüldü** ve kabul edildi. Filtre zinciri bir fotoğrafa tablonun *yüzeyini* verebilir; kompozisyonunu veremez. Bu, kodla kapatılacak bir açık değil, yöntemin sınırı.
+2. **Supabase yazıldı ama bağlanmadı.** Tek işi galeriydi, galeri tarayıcıya taşınınca "fotoğrafın cihazından çıkmaz" cümlesi istisnasız doğru oldu — ve haftada bir uyandırılması gereken bir sunucu kalmadı.
+
+**Açık kalan tek şey kod değil:** landing sayfasındaki örnek hâlâ elle çizilmiş bir SVG (8.1). Gerçek bir fotoğraf geldiği gün motorla değiştirilecek.
 
 ---
 
