@@ -73,7 +73,7 @@ export default function Home() {
             <SampleArtwork className="block w-full" />
           </GoldFrame>
           <Plaque
-            title="Portrait of a Stranger"
+            title="A Street at Dusk"
             style="Ottoman Court"
             date="Example"
           />

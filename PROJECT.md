@@ -726,7 +726,24 @@ Domain değiştikten sonra her şey baştan sınandı — eski adreste çalış�
 
 Eski adres (`patina-steel-nine.vercel.app`) artık 404 — domain listesinden kaldırıldı.
 
-### 8.1 İki açık uç (2026-11-14)
+### 8.2 Açık uçlar kapandı (2026-11-14, aynı gün)
+
+Aliyev bir fotoğraf verdi — Galata Kulesi'ne bakan, alacakaranlıkta ıslak arnavut kaldırımlı bir sokak. Motorun ihtiyacı olan her şey vardı: sıcak lamba ışığı, taş, ahşap, yansıma.
+
+**Yapılanlar:**
+- Fotoğraf 3:4'e kırpıldı (alttan, kule ve sokak korunarak) ve **canlı sitede** boyandı. Sağ taraf sitenin kendi indirme butonundan çıktı — yani ziyaretçinin alacağı dosyanın aynısı.
+- `SampleArtwork.tsx` çöpe gitti, yerine iki gerçek görsel geldi: `public/sample-photo.jpg` ve `public/sample-painting.jpg`. Bölme `clip-path` ile — iki görsel aynı çerçeveyi paylaşıyor, böylece dikiş aynı lambanın üzerine düşüyor ve göz lambayı lambayla kıyaslayabiliyor.
+- Künye *"Portrait of a Stranger"* → *"A Street at Dusk"*.
+- README görüntüleri de bu fotoğrafla yenilendi. Galeri görüntüsünde aynı sokak üç ayrı okulda: Aged Canvas, Rembrandt, Ottoman Court.
+- `public/` içindeki 5 kullanılmayan `create-next-app` SVG'si silindi.
+
+**Lighthouse (yerel production build, görseller eklendikten sonra):** `100 · 100 · 100 · 100`, LCP 0.7 s, layout shift 0.
+
+> `uses-responsive-images` denetimi 94 KiB tasarruf önerdi ve **bilerek uygulanmadı**: görseller 384 px'de gösteriliyor ama 800 px olarak duruyor, çünkü retina ekranda 2× gerekiyor. Lighthouse testi 1× yaptığı için fazlalık görüyor. Kapatmak telefonlarda bulanıklık demekti.
+
+**Telif notu:** Fotoğrafın Aliyev'e ait olup olmadığı doğrulanmadı. Başkasının eseriyse herkese açık bir sitenin vitrininde durması sorun olabilir; Aliyev'e söylendi, karar onun.
+
+### ~~8.1 İki açık uç~~ (2026-11-14 — **kapandı, bkz. 8.2**)
 
 **1. Landing sayfasındaki örnek hâlâ sahte.** `components/SampleArtwork.tsx` elle çizilmiş bir SVG ve kendi yorumunda şöyle yazıyor: *"FAZ 3 replaces it with two real photographs once the engine can actually produce the right-hand side."* FAZ 3 bunu yapmadı. Yani fotoğraf boyayan bir sitenin ana sayfası, motorun gerçek çıktısını göstermiyor — elle çizilmiş bir taklidini gösteriyor.
 
@@ -814,7 +831,7 @@ Altı gün (9–14 Kasım 2026). Maliyet: **0 ₺**, ve bu bir hedef değil art�
 1. **Üretken yapay zeka olmadan ne kadar ileri gidilebileceğinin tavanı ölçüldü** ve kabul edildi. Filtre zinciri bir fotoğrafa tablonun *yüzeyini* verebilir; kompozisyonunu veremez. Bu, kodla kapatılacak bir açık değil, yöntemin sınırı.
 2. **Supabase yazıldı ama bağlanmadı.** Tek işi galeriydi, galeri tarayıcıya taşınınca "fotoğrafın cihazından çıkmaz" cümlesi istisnasız doğru oldu — ve haftada bir uyandırılması gereken bir sunucu kalmadı.
 
-**Açık kalan tek şey kod değil:** landing sayfasındaki örnek hâlâ elle çizilmiş bir SVG (8.1). Gerçek bir fotoğraf geldiği gün motorla değiştirilecek.
+**Son açık uç de aynı gün kapandı:** landing sayfasındaki örnek artık motorun gerçek çıktısı (8.2).
 
 ---
 
