@@ -697,9 +697,11 @@ Kapsamı bilerek dar: düz bir `"minimatch": "^11"` override'ı, ağacın başka
 
 ---
 
-### ◑ FAZ 8 — Yayın ve opsiyoneller
+### ✅ FAZ 8 — Yayın ve opsiyoneller
 - [x] `README.md`: ekran görüntüleri, nasıl çalışır, kurulum adımları, teknoloji listesi
-- [ ] Vercel production domain'i düzenle (`patina-art.vercel.app` gibi) — **Aliyev yapacak**, MCP takım yetkisi engellendi
+- [x] Vercel production domain → **`patina-art.vercel.app`** (2026-11-14). MCP takım yetkisi engellendiği için Aliyev panelden yaptı.
+  - **Öğrenilen:** Vercel'de proje adını değiştirmek adresi değiştirmiyor. Bunlar ayrı iki şey — ad `Settings → General`'da, adres `Settings → Domains`'de ayrıca atanıyor. Eski domain silinip yenisi `Add Existing` ile eklendi.
+  - **İkinci öğrenilen:** domain değişince `sitemap.xml`, `robots.txt` ve canonical bağlantılar **kendiliğinden düzelmedi**, çünkü `VERCEL_PROJECT_PRODUCTION_URL` build anında gömülüyor ve sayfalar statik. Yeni bir deploy gerekti. Kod doğruydu, sadece eski bir build yayındaydı.
 - [x] ~~GitHub Actions ile haftalık Supabase ping~~ — **konusuz**, Supabase yok (2.3)
 - [ ] ~~Public galeri~~ — mimariye aykırı: galeri tarayıcıda, paylaşılacak sunucu yok. Yapılmak istenirse 2.3 kararının geri alınması gerekir
 - [ ] ~~Ücretsiz özel alan adı~~ — yok, 0 ₺ kuralı
@@ -775,7 +777,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 | FAZ 5 — Kaydetme & galeri | ✅ Bitti | 2026-11-13 | Galeri Supabase yerine tarayıcıda (IndexedDB). 1600px/0.82 + 400px thumbnail + 20 sınırı korundu. Kaydet/aç/indir/sil tarayıcıda test edildi. |
 | FAZ 6 — Cilalama | ✅ Bitti | 2026-11-13 | Hata sınırları + 404, SEO (sitemap/robots/OG/icon/canonical), slider dokunma hedefi 4→24 px, skip link + focus tuzağı + aria-live. Lighthouse masaüstü 98-100, mobil 90; a11y her sayfada 100. |
 | FAZ 7 — Güvenlik denetimi | ✅ Bitti | 2026-11-13 | 9 maddenin tamamı ✅, rapor 7.1'de. Güvenlik başlıkları + CSP eklendi ve production build'de ölçüldü. EXIF silinmesi kanarya testiyle kanıtlandı. Üçüncü parti istek sayısı 0. npm audit 7 → 0. |
-| FAZ 8 — Yayın | ◑ README bitti | 2026-11-14 | README baştan yazıldı + 3 ekran görüntüsü. Kalan: Vercel'de domain adını düzeltmek (Aliyev) ve landing/README için gerçek bir fotoğraf (8.1). |
+| FAZ 8 — Yayın | ✅ Bitti | 2026-11-14 | README baştan yazıldı + 3 ekran görüntüsü. Adres `patina-art.vercel.app` oldu. Açık kalan tek şey kod değil: landing ve README için gerçek bir fotoğraf (8.1). |
 
 ---
 
