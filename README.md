@@ -4,7 +4,9 @@
 
 [**patina-art.vercel.app**](https://patina-art.vercel.app)
 
-![The Patina landing page](docs/landing.png)
+![One photograph, split down the middle: the left half as it was, the right half repainted by Patina](docs/sample-closeup.png)
+
+*One photograph, split down the middle. The right half came out of the site's own download button.*
 
 ---
 
