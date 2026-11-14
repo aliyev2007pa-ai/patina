@@ -2,7 +2,7 @@
 
 **Turn your photos into old master oil paintings — in the browser, for free, without uploading anything.**
 
-[**patina-steel-nine.vercel.app**](https://patina-steel-nine.vercel.app)
+[**patina-art.vercel.app**](https://patina-art.vercel.app)
 
 ![The Patina landing page](docs/landing.png)
 

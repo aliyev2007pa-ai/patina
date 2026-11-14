@@ -11,7 +11,7 @@
  */
 export const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "https://patina-steel-nine.vercel.app";
+  : "https://patina-art.vercel.app";
 
 export const SITE_NAME = "Patina";
 

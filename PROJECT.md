@@ -328,7 +328,8 @@ create policy "own_folder_all" on storage.objects
 - `npm run build` temiz geçti. Next.js anonim telemetrisi kapatıldı (bölüm 6, kural 7).
 - Repo: https://github.com/aliyev2007pa-ai/patina — ilk commit `f1230ad` push edildi.
 - PROJECT.md `patina/` içine taşındı, böylece repoda yedekli ve versiyonlu.
-- **Canlı adres: https://patina-steel-nine.vercel.app** — Vercel takımı `Filinta`, plan Hobby (ücretsiz). İlk deploy 25 saniye sürdü.
+- **Canlı adres: https://patina-art.vercel.app** — Vercel takımı `Filinta`, plan Hobby (ücretsiz). İlk deploy 25 saniye sürdü.
+  - *2026-11-14:* proje adı `patina` → `patina-art` yapıldı, adres de onunla değişti. Eski `patina-steel-nine.vercel.app` artık geçerli değil. Kodda tek bir yer bile kırılmadı: `lib/site.ts` adresi Vercel'in `VERCEL_PROJECT_PRODUCTION_URL` değişkeninden okuyor, oradaki sabit yalnızca yerelde çalışırken kullanılan yedek.
 - **Kabul kriteri doğrulandı (2026-11-09):** Ana sayfaya gizlilik satırı eklenip `d81ad25` push edildi; Vercel elle hiçbir şey yapılmadan yeniden yayınladı ve yeni satır canlı sitede göründü. push → otomatik deploy zinciri çalışıyor.
 
 **Sapmalar / açık kalanlar:**
@@ -766,7 +767,7 @@ git checkout main && git pull        # 7. Yerelde güncelle
 
 | Faz | Durum | Tarih | Not |
 |---|---|---|---|
-| FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı: patina-steel-nine.vercel.app. push → otomatik deploy zinciri test edildi ve çalışıyor. |
+| FAZ 0 — Kurulum & ilk deploy | ✅ Bitti | 2026-11-09 | Site canlı (o gün `patina-steel-nine.vercel.app`, FAZ 8'de `patina-art.vercel.app` oldu). push → otomatik deploy zinciri test edildi ve çalışıyor. |
 | FAZ 1 — Tasarım sistemi | ✅ Bitti | 2026-11-12 | Palet, fontlar, 7 bileşen, landing + about. 320px'de taşma yok, canlıda doğrulandı. |
 | FAZ 2 — Yükleme & önizleme | ✅ Bitti | 2026-11-12 | DropZone, magic bytes, EXIF düzeltme, 2048px küçültme. 8 senaryo tarayıcıda test edildi. |
 | FAZ 3 — Yağlı boya motoru | ✅ Bitti | 2026-11-13 | 13 geçişli WebGL2 boru hattı, 6 preset, tam kalite render (2048 → 462 ms), PNG/JPEG indirme, çerçeve + künye, CPU yedeği. |
